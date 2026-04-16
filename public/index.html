@@ -36,6 +36,7 @@
       </div>
 
       <input type="file" id="file-input" accept="image/*" hidden>
+      <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
     </div>
 
     <!-- Quick Suggestions -->
@@ -62,6 +63,13 @@
 
     <!-- Result (monster card renders here) -->
     <div id="result" class="hidden"></div>
+
+    <!-- Past Searches -->
+    <div id="past-searches" class="past-searches hidden">
+      <div class="section-label">🕰️ Past Summons</div>
+      <div id="past-searches-list" class="past-searches-list"></div>
+      <button id="clear-history" class="btn-clear-history" type="button">Clear History</button>
+    </div>
 
     <footer>MonsterDex · Powered by AI · No monster left unclassified</footer>
   </div>

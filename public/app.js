@@ -8,6 +8,7 @@ const searchInput   = document.getElementById('search-input');
 const btnCamera     = document.getElementById('btn-camera');
 const btnUpload     = document.getElementById('btn-upload');
 const fileInput     = document.getElementById('file-input');
+const cameraInput   = document.getElementById('camera-input');
 const suggestionsEl = document.getElementById('suggestions');
 const loadingEl     = document.getElementById('loading');
 const loadingText   = document.getElementById('loading-text');
@@ -19,11 +20,14 @@ const cameraCanvas  = document.getElementById('camera-canvas');
 const cameraCapture = document.getElementById('camera-capture');
 const cameraSwitch  = document.getElementById('camera-switch');
 const cameraClose   = document.getElementById('camera-close');
+const pastSearchesEl    = document.getElementById('past-searches');
+const pastSearchesList  = document.getElementById('past-searches-list');
+const clearHistoryBtn   = document.getElementById('clear-history');
 
 // ---- State ----
 let currentStream = null;
-let facingMode = 'environment'; // back camera by default on mobile
-let userImageDataUrl = null;    // holds the photo/upload for display in card
+let facingMode = 'environment';
+let userImageDataUrl = null;
 
 // ---- Loading messages ----
 const LOADING_MSGS = [
@@ -33,7 +37,7 @@ const LOADING_MSGS = [
   'Deciphering forbidden scrolls…',
   'Scouring the darkness…',
   'Awakening the archives…',
-  'Binding the creature's knowledge…'
+  'Binding the creature\'s knowledge…'
 ];
 
 // ============================
@@ -42,7 +46,16 @@ const LOADING_MSGS = [
 
 searchForm.addEventListener('submit', handleSearch);
 
-btnCamera.addEventListener('click', openCamera);
+// Camera: on mobile, use native file picker with capture; on desktop, use getUserMedia
+btnCamera.addEventListener('click', () => {
+  if (isMobile()) {
+    cameraInput.click();
+  } else {
+    openCamera();
+  }
+});
+
+cameraInput.addEventListener('change', handleFileUpload);
 
 btnUpload.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', handleFileUpload);
@@ -50,6 +63,7 @@ fileInput.addEventListener('change', handleFileUpload);
 cameraCapture.addEventListener('click', capturePhoto);
 cameraSwitch.addEventListener('click', switchCamera);
 cameraClose.addEventListener('click', closeCamera);
+clearHistoryBtn.addEventListener('click', clearHistory);
 
 // Suggestion buttons
 suggestionsEl.querySelectorAll('button').forEach(btn => {
@@ -65,6 +79,18 @@ document.addEventListener('keydown', e => {
     closeCamera();
   }
 });
+
+// Load past searches on page load
+renderPastSearches();
+
+// ============================
+//   Helpers
+// ============================
+
+function isMobile() {
+  return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints > 0 && window.innerWidth < 800);
+}
 
 // ============================
 //   Search
@@ -185,8 +211,9 @@ async function handleFileUpload(e) {
   userImageDataUrl = await fileToDataUrl(file);
   await identifyMonster(file);
 
-  // Reset so the same file can be selected again
+  // Reset both inputs so the same file can be selected again
   fileInput.value = '';
+  cameraInput.value = '';
 }
 
 function fileToDataUrl(file) {
@@ -272,6 +299,9 @@ async function showResult(monster) {
   errorEl.classList.add('hidden');
   suggestionsEl.classList.remove('hidden');
 
+  // Save to past searches
+  saveToHistory(monster);
+
   // Try to fetch a Wikipedia image (only for text searches)
   let imageUrl = null;
   let imageCredit = null;
@@ -289,6 +319,7 @@ async function showResult(monster) {
 
   resultEl.innerHTML = renderMonsterCard(monster, imageUrl, imageCredit);
   resultEl.classList.remove('hidden');
+  renderPastSearches();
   window.scrollTo({ top: resultEl.offsetTop - 20, behavior: 'smooth' });
 }
 
@@ -479,4 +510,82 @@ function formatLabel(camelCase) {
     .replace(/([A-Z])/g, ' $1')
     .replace(/^./, s => s.toUpperCase())
     .trim();
+}
+
+// ============================
+//   Past Searches (localStorage)
+// ============================
+
+const HISTORY_KEY = 'monsterdex_history';
+const MAX_HISTORY = 30;
+
+function getHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveToHistory(monster) {
+  const history = getHistory();
+
+  // Remove duplicate if exists
+  const filtered = history.filter(m => m.name.toLowerCase() !== monster.name.toLowerCase());
+
+  // Add to front
+  filtered.unshift({
+    name: monster.name,
+    emoji: monster.emoji || '👹',
+    origin: monster.origin || '',
+    dangerLevel: monster.dangerLevel || 3,
+    type: monster.type || '',
+    timestamp: Date.now()
+  });
+
+  // Cap at MAX_HISTORY
+  const trimmed = filtered.slice(0, MAX_HISTORY);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
+}
+
+function clearHistory() {
+  localStorage.removeItem(HISTORY_KEY);
+  renderPastSearches();
+}
+
+function renderPastSearches() {
+  const history = getHistory();
+
+  if (history.length === 0) {
+    pastSearchesEl.classList.add('hidden');
+    return;
+  }
+
+  pastSearchesEl.classList.remove('hidden');
+
+  pastSearchesList.innerHTML = history.map(m => {
+    const skulls = '💀'.repeat(Math.min(Math.max(m.dangerLevel || 3, 1), 5));
+    return `
+      <div class="past-search-item" data-monster="${escapeAttr(m.name)}" role="button" tabindex="0">
+        <span class="past-search-emoji">${m.emoji || '👹'}</span>
+        <div class="past-search-info">
+          <div class="past-search-name">${escapeHtml(m.name)}</div>
+          <div class="past-search-origin">${escapeHtml(m.origin)}</div>
+        </div>
+        <span class="past-search-danger">${skulls}</span>
+      </div>
+    `;
+  }).join('');
+
+  // Click handlers for past search items
+  pastSearchesList.querySelectorAll('.past-search-item').forEach(item => {
+    const handler = () => {
+      searchInput.value = item.dataset.monster;
+      searchForm.dispatchEvent(new Event('submit'));
+    };
+    item.addEventListener('click', handler);
+    item.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); }
+    });
+  });
 }
