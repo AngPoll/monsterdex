@@ -1,7 +1,3 @@
 {
-  "rewrites": [
-    { "source": "/api/search", "destination": "/api/search" },
-    { "source": "/api/identify", "destination": "/api/identify" }
-  ],
   "outputDirectory": "public"
 }
