@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MonsterDex — The Ultimate Monster Encyclopedia</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦑</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <div class="logo-eyebrow">✦ The Ultimate ✦</div>
+      <h1>MonsterDex</h1>
+      <p class="tagline">Search any monster. Snap a photo. Upload an image.<br>Know thy beast.</p>
+    </header>
+
+    <!-- Search Section -->
+    <div class="search-section">
+      <form id="search-form" class="search-bar">
+        <input type="text" id="search-input"
+               placeholder="Enter a monster name… (e.g. Kraken, Medusa, Wendigo)"
+               autocomplete="off" maxlength="200">
+        <button type="submit" class="btn-summon">Summon 🗡️</button>
+      </form>
+
+      <div class="alt-methods">
+        <span class="divider-text">— or identify by image —</span>
+        <div class="method-buttons">
+          <button id="btn-camera" class="btn-method" type="button">📷 Take Photo</button>
+          <button id="btn-upload" class="btn-method" type="button">📁 Upload Image</button>
+        </div>
+      </div>
+
+      <input type="file" id="file-input" accept="image/*" hidden>
+    </div>
+
+    <!-- Quick Suggestions -->
+    <div id="suggestions" class="suggestions">
+      Try:
+      <button data-monster="Kraken">🦑 Kraken</button>
+      <button data-monster="Medusa">🐍 Medusa</button>
+      <button data-monster="Werewolf">🐺 Werewolf</button>
+      <button data-monster="Dragon">🐉 Dragon</button>
+      <button data-monster="Mothman">🦇 Mothman</button>
+      <button data-monster="Wendigo">💀 Wendigo</button>
+      <button data-monster="Cerberus">🔥 Cerberus</button>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading" class="loading hidden">
+      <div class="loading-eye">👁️</div>
+      <p id="loading-text" class="loading-text">Summoning from the depths…</p>
+      <div class="loading-bar"><div class="loading-fill"></div></div>
+    </div>
+
+    <!-- Error State -->
+    <div id="error-state" class="error-state hidden"></div>
+
+    <!-- Result (monster card renders here) -->
+    <div id="result" class="hidden"></div>
+
+    <footer>MonsterDex · Powered by AI · No monster left unclassified</footer>
+  </div>
+
+  <!-- Camera Modal -->
+  <div id="camera-modal" class="camera-modal hidden">
+    <div class="camera-container">
+      <div class="camera-header">
+        <span>📷 Monster Scanner</span>
+        <button id="camera-close" class="camera-close-btn" type="button">✕</button>
+      </div>
+      <video id="camera-feed" autoplay playsinline></video>
+      <canvas id="camera-canvas" hidden></canvas>
+      <div class="camera-controls">
+        <button id="camera-switch" class="btn-switch-cam" type="button">🔄 Flip</button>
+        <button id="camera-capture" class="btn-capture" type="button">⬤ Capture</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
