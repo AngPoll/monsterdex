@@ -1,5 +1,6 @@
 const OpenAI = require('openai');
 const { MONSTER_SYSTEM_PROMPT, IDENTIFY_PROMPT } = require('./_prompts');
+const { getCachedMonster, cacheMonster, isCacheAvailable } = require('./_cache');
 
 // Vercel serverless: parse multipart manually (no multer)
 const { Readable } = require('stream');
@@ -100,7 +101,18 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Step 2 — get full profile
+    // Step 2 — check cache for this monster
+    if (isCacheAvailable()) {
+      const cached = await getCachedMonster(monsterName);
+      if (cached) {
+        cached._identified = true;
+        cached._identifiedAs = monsterName;
+        cached._fromCache = true;
+        return res.status(200).json(cached);
+      }
+    }
+
+    // Step 3 — not cached, get full profile from OpenAI
     const dataResponse = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
@@ -113,6 +125,12 @@ module.exports = async function handler(req, res) {
 
     const raw = dataResponse.choices[0].message.content.trim();
     const monsterData = JSON.parse(raw);
+
+    // Step 4 — cache the result
+    if (isCacheAvailable()) {
+      cacheMonster(monsterName, monsterData, null, null).catch(() => {});
+    }
+
     monsterData._identified = true;
     monsterData._identifiedAs = monsterName;
     res.status(200).json(monsterData);

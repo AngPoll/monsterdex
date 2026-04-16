@@ -1,5 +1,6 @@
 const OpenAI = require('openai');
 const { MONSTER_SYSTEM_PROMPT } = require('./_prompts');
+const { getCachedMonster, cacheMonster, isCacheAvailable } = require('./_cache');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -14,6 +15,16 @@ module.exports = async function handler(req, res) {
 
     const sanitized = query.trim().substring(0, 200);
 
+    // 1. Check cache first
+    if (isCacheAvailable()) {
+      const cached = await getCachedMonster(sanitized);
+      if (cached) {
+        cached._fromCache = true;
+        return res.status(200).json(cached);
+      }
+    }
+
+    // 2. Not cached — call OpenAI
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const completion = await openai.chat.completions.create({
@@ -28,6 +39,35 @@ module.exports = async function handler(req, res) {
 
     const raw = completion.choices[0].message.content.trim();
     const monsterData = JSON.parse(raw);
+
+    // 3. Fetch Wikipedia image to store with cache
+    let imageUrl = null;
+    let imageCredit = null;
+    try {
+      const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(monsterData.name)}`);
+      if (wikiRes.ok) {
+        const wikiData = await wikiRes.json();
+        if (wikiData.originalimage?.source) {
+          imageUrl = wikiData.originalimage.source;
+          imageCredit = `Wikipedia — ${wikiData.title}`;
+        } else if (wikiData.thumbnail?.source) {
+          imageUrl = wikiData.thumbnail.source;
+          imageCredit = `Wikipedia — ${wikiData.title}`;
+        }
+      }
+    } catch {
+      // Wikipedia fetch failed — no image, that's fine
+    }
+
+    // 4. Save to cache (non-blocking)
+    if (isCacheAvailable()) {
+      cacheMonster(sanitized, monsterData, imageUrl, imageCredit).catch(() => {});
+    }
+
+    // 5. Include image info in response
+    monsterData._imageUrl = imageUrl;
+    monsterData._imageCredit = imageCredit;
+
     res.status(200).json(monsterData);
   } catch (err) {
     console.error('Search error:', err.message);

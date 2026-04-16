@@ -302,14 +302,19 @@ async function showResult(monster) {
   // Save to past searches
   saveToHistory(monster);
 
-  // Try to fetch a Wikipedia image (only for text searches)
+  // Determine image: user photo > server cache > Wikipedia fetch
   let imageUrl = null;
   let imageCredit = null;
 
   if (userImageDataUrl) {
     imageUrl = userImageDataUrl;
     imageCredit = 'Your captured image';
+  } else if (monster._imageUrl) {
+    // Image was cached by the server
+    imageUrl = monster._imageUrl;
+    imageCredit = monster._imageCredit || null;
   } else {
+    // Fallback: fetch from Wikipedia client-side
     const wikiImg = await fetchWikipediaImage(monster.name);
     if (wikiImg) {
       imageUrl = wikiImg.url;
