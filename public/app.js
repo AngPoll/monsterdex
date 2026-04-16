@@ -85,6 +85,12 @@ async function handleSearch(e) {
       body: JSON.stringify({ query })
     });
 
+    if (!res.ok) {
+      const errData = await res.json().catch(() => null);
+      showError(errData?.error || `Server error (${res.status}). Please try again.`);
+      return;
+    }
+
     const data = await res.json();
 
     if (data.error && !data.name) {
@@ -93,7 +99,8 @@ async function handleSearch(e) {
       showResult(data);
     }
   } catch (err) {
-    showError('Failed to connect to the MonsterDex server. Is it running?');
+    console.error('Search failed:', err);
+    showError('Failed to connect to MonsterDex. Please check your connection and try again.');
   }
 }
 
@@ -207,6 +214,12 @@ async function identifyMonster(blob) {
       body: formData
     });
 
+    if (!res.ok) {
+      const errData = await res.json().catch(() => null);
+      showError(errData?.error || `Server error (${res.status}). Please try again.`);
+      return;
+    }
+
     const data = await res.json();
 
     if (data.error && !data.name) {
@@ -215,7 +228,8 @@ async function identifyMonster(blob) {
       showResult(data);
     }
   } catch (err) {
-    showError('Failed to connect to the MonsterDex server. Is it running?');
+    console.error('Identify failed:', err);
+    showError('Failed to connect to MonsterDex. Please check your connection and try again.');
   }
 }
 
