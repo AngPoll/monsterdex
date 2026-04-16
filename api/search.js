@@ -31,9 +31,18 @@ module.exports = async function handler(req, res) {
     res.status(200).json(monsterData);
   } catch (err) {
     console.error('Search error:', err.message);
-    if (err.message?.includes('API key') || err.message?.includes('Incorrect API')) {
-      return res.status(500).json({ error: 'API key not configured. Set OPENAI_API_KEY in Vercel environment variables.' });
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-api-key-here') {
+      return res.status(500).json({ error: 'API key not configured. Go to Vercel → Settings → Environment Variables and set OPENAI_API_KEY.' });
     }
-    res.status(500).json({ error: 'Failed to summon monster data. The beast evades us… try again.' });
+    if (err.message?.includes('API key') || err.message?.includes('Incorrect API') || err.message?.includes('invalid_api_key')) {
+      return res.status(500).json({ error: 'Invalid API key. Check your OPENAI_API_KEY in Vercel environment variables.' });
+    }
+    if (err.message?.includes('model') || err.message?.includes('does not exist')) {
+      return res.status(500).json({ error: 'Your OpenAI account may not have access to GPT-4o. Check your plan at platform.openai.com.' });
+    }
+    if (err.message?.includes('quota') || err.message?.includes('billing') || err.message?.includes('rate_limit')) {
+      return res.status(500).json({ error: 'OpenAI API limit reached. Check your billing at platform.openai.com.' });
+    }
+    res.status(500).json({ error: 'Failed to summon monster data: ' + (err.message || 'Unknown error. Try again.') });
   }
 };
