@@ -98,6 +98,52 @@ async function openaiIdentify(base64Data, mimeType) {
   return completion.choices[0].message.content.trim();
 }
 
+// ---------- Provider: Claude (Anthropic) ----------
+
+async function claudeProfile(monsterName) {
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 3000,
+      system: MONSTER_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: 'Tell me everything about this monster: ' + monsterName }]
+    })
+  });
+  if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text()).substring(0, 200)}`);
+  const data = await res.json();
+  return JSON.parse(data.content[0].text.trim());
+}
+
+async function claudeIdentify(base64Data, mimeType) {
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 100,
+      messages: [{ role: 'user', content: [
+        { type: 'text', text: IDENTIFY_PROMPT },
+        { type: 'image', source: { type: 'base64', media_type: mimeType, data: base64Data } }
+      ] }]
+    })
+  });
+  if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text()).substring(0, 200)}`);
+  const data = await res.json();
+  return data.content[0].text.trim();
+}
+
 // ---------- Fallback chains ----------
 
 async function generateProfile(monsterName) {
@@ -119,6 +165,15 @@ async function generateProfile(monsterName) {
   } catch (err) {
     errors.push('OpenAI: ' + err.message);
     console.error('OpenAI profile error:', err.message);
+  }
+
+  // 3. Try Claude
+  try {
+    const data = await claudeProfile(monsterName);
+    if (data) { data._provider = 'claude'; return data; }
+  } catch (err) {
+    errors.push('Claude: ' + err.message);
+    console.error('Claude profile error:', err.message);
   }
 
   console.error('All profile providers failed:', errors.join(' | '));
@@ -144,6 +199,15 @@ async function identifyFromImage(base64Data, mimeType) {
   } catch (err) {
     errors.push('OpenAI: ' + err.message);
     console.error('OpenAI identify error:', err.message);
+  }
+
+  // 3. Try Claude
+  try {
+    const name = await claudeIdentify(base64Data, mimeType);
+    if (name) return name;
+  } catch (err) {
+    errors.push('Claude: ' + err.message);
+    console.error('Claude identify error:', err.message);
   }
 
   console.error('All identify providers failed:', errors.join(' | '));
