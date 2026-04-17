@@ -142,36 +142,16 @@ async function identifyFromImage(base64Data, mimeType) {
   throw new Error('Sorry monster unavailable, try again soon.');
 }
 
-// ---------- Image search: Gemini AI → Google → Wikipedia ----------
+// ---------- Image search: Google → Wikipedia ----------
 
 async function fetchMonsterImage(monsterName) {
-  // 1. Try Gemini AI-generated image search via Google
+  // 1. Try Google Custom Search (free: 100 queries/day, cached monsters don't re-query)
   try {
-    if (process.env.GEMINI_API_KEY) {
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: `Give me a single direct image URL for the mythological monster "${monsterName}". Return ONLY the URL, nothing else. It should be a real, publicly accessible image URL from a site like deviantart, artstation, pinterest, or wikimedia. No markdown, no explanation.` }] }],
-        generationConfig: { maxOutputTokens: 200 }
-      });
-      const aiUrl = result.response.text().trim();
-      if (aiUrl.startsWith('http') && !aiUrl.includes(' ')) {
-        // Verify the URL is reachable
-        const check = await fetch(aiUrl, { method: 'HEAD' });
-        if (check.ok && (check.headers.get('content-type') || '').startsWith('image')) {
-          return { url: aiUrl, credit: 'AI Curated' };
-        }
-      }
-    }
-  } catch {}
-
-  // 2. Try Google Custom Search
-  try {
-    const key = process.env.GOOGLE_CSE_KEY || process.env.GEMINI_API_KEY;
+    const key = process.env.GOOGLE_CSE_KEY;
     const cx = process.env.GOOGLE_CSE_CX;
     if (key && cx) {
-      const q = encodeURIComponent(monsterName + ' monster mythology');
-      const url = `https://www.googleapis.com/customsearch/v1?key=${key}&cx=${cx}&q=${q}&searchType=image&num=1&safe=active`;
+      const q = encodeURIComponent(monsterName + ' monster mythology art');
+      const url = `https://www.googleapis.com/customsearch/v1?key=${key}&cx=${cx}&q=${q}&searchType=image&num=3&safe=active&imgSize=large`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -182,7 +162,7 @@ async function fetchMonsterImage(monsterName) {
     }
   } catch {}
 
-  // 3. Try Wikipedia (last resort)
+  // 2. Try Wikipedia (fallback)
   try {
     const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(monsterName)}`);
     if (wikiRes.ok) {
