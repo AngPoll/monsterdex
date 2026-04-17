@@ -387,8 +387,9 @@ function renderMonsterCard(m, imageUrl, imageCredit) {
     `<div class="rappear">${escapeHtml(a)}</div>`
   ).join('') : '';
 
-  // Lore text (our API uses "lore", v2 used "description")
+  // Lore text (our API uses "lore", v2 used "description") — render bullet points
   const loreText = m.lore || m.description || 'No lore available.';
+  const loreHtml = escapeHtml(loreText).replace(/•/g, '<br>•');
 
   // Identified banner
   const identifiedHtml = m._identified ? `
@@ -415,7 +416,7 @@ function renderMonsterCard(m, imageUrl, imageCredit) {
 
         <div>
           <div class="rsection">📖 Origins &amp; Lore</div>
-          <div class="rdesc">${escapeHtml(loreText)}</div>
+          <div class="rdesc">${loreHtml}</div>
         </div>
 
         ${statsHtml ? `
