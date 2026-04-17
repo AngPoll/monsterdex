@@ -7,30 +7,38 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function isRetryable(err) {
   const msg = (err.message || '').toLowerCase();
-  return msg.includes('503') || msg.includes('service unavailable') || msg.includes('overloaded') || msg.includes('high demand');
+  return msg.includes('503') || msg.includes('service unavailable') || msg.includes('overloaded') || msg.includes('high demand') || (msg.includes('429') && msg.includes('retry in'));
 }
 
-// ---------- Provider: Gemini (with retry on 503) ----------
+// ---------- Provider: Gemini (with retry on 503/429) ----------
+
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'];
 
 async function geminiCall(contentConfig, genConfig) {
   if (!process.env.GEMINI_API_KEY) return null;
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-  const MAX_RETRIES = 3;
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    try {
-      const result = await model.generateContent({ contents: contentConfig, generationConfig: genConfig });
-      return result.response.text().trim();
-    } catch (err) {
-      if (isRetryable(err) && attempt < MAX_RETRIES - 1) {
-        console.log(`Gemini 503 — retrying in ${(attempt + 1) * 2}s (attempt ${attempt + 1}/${MAX_RETRIES})`);
-        await sleep((attempt + 1) * 2000);
-        continue;
+  for (const modelName of GEMINI_MODELS) {
+    const model = genAI.getGenerativeModel({ model: modelName });
+    const MAX_RETRIES = 2;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        const result = await model.generateContent({ contents: contentConfig, generationConfig: genConfig });
+        console.log(`Gemini success with ${modelName}`);
+        return result.response.text().trim();
+      } catch (err) {
+        console.error(`Gemini ${modelName} attempt ${attempt + 1} error:`, err.message?.substring(0, 150));
+        if (isRetryable(err) && attempt < MAX_RETRIES - 1) {
+          await sleep((attempt + 1) * 3000);
+          continue;
+        }
+        // If quota exceeded, try next model
+        if (err.message?.includes('429')) break;
+        throw err;
       }
-      throw err;
     }
   }
+  return null;
 }
 
 async function geminiProfile(monsterName) {
@@ -114,7 +122,7 @@ async function generateProfile(monsterName) {
   }
 
   console.error('All profile providers failed:', errors.join(' | '));
-  throw new Error(errors.length ? errors.join(' | ') : 'Sorry monster unavailable, try again soon.');
+  throw new Error('Sorry monster unavailable, try again soon.');
 }
 
 async function identifyFromImage(base64Data, mimeType) {
