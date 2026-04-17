@@ -76,7 +76,7 @@ module.exports = async function handler(req, res) {
     const mimeType = imagePart.contentType || 'image/jpeg';
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     // Step 1 — identify the monster from image
     const identifyResult = await model.generateContent({

@@ -15,7 +15,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ---------- Gemini client ----------
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
 // ---------- Prompts ----------
 const MONSTER_SYSTEM_PROMPT = `You are MonsterDex, the ultimate encyclopedia of monsters, cryptids, mythological creatures, and legendary beasts from folklore, mythology, fiction, and urban legends worldwide.
