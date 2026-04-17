@@ -31,7 +31,7 @@ module.exports = async function handler(req, res) {
     const imageUrl = image?.url || null;
     const imageCredit = image?.credit || null;
 
-    // 4. Save to cache (non-blocking)
+    // 4. Save to cache under both the user query AND the canonical name
     if (isCacheAvailable()) {
       cacheMonster(sanitized, monsterData, imageUrl, imageCredit).catch(() => {});
     }

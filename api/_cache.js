@@ -51,7 +51,13 @@ async function cacheMonster(name, monsterData, imageUrl, imageCredit) {
       _imageUrl: imageUrl || null,
       _imageCredit: imageCredit || null
     };
-    await client.set(toKey(name), JSON.stringify(record));
+    // Store under the query key
+    await client.set(toKey(name), record);
+    // Also store under the canonical monster name so variants hit cache
+    const canonical = monsterData.name;
+    if (canonical && toKey(canonical) !== toKey(name)) {
+      await client.set(toKey(canonical), record);
+    }
   } catch (err) {
     console.error('Cache write error:', err.message);
     // fail silently — app still works without cache
