@@ -145,22 +145,37 @@ async function identifyFromImage(base64Data, mimeType) {
 // ---------- Image search: Google → Wikimedia Commons → Wikipedia ----------
 
 async function fetchMonsterImage(monsterName) {
-  // 1. Try Google Custom Search (best images)
+  // 1. Try Google Custom Search (best images) — try multiple queries
   try {
     const key = process.env.GOOGLE_CSE_KEY;
     const cx = process.env.GOOGLE_CSE_CX;
     if (key && cx) {
-      const q = encodeURIComponent(monsterName + ' monster mythology art');
-      const url = `https://www.googleapis.com/customsearch/v1?key=${key}&cx=${cx}&q=${q}&searchType=image&num=3&safe=active&imgSize=large`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.items?.[0]?.link) {
-          return { url: data.items[0].link, credit: 'Google Images' };
+      const queries = [
+        monsterName + ' monster',
+        monsterName,
+        monsterName + ' creature art'
+      ];
+      for (const q of queries) {
+        const url = `https://www.googleapis.com/customsearch/v1?key=${key}&cx=${cx}&q=${encodeURIComponent(q)}&searchType=image&num=3&safe=active`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.items?.[0]?.link) {
+            console.log(`Google Image found for "${monsterName}" with query "${q}"`);
+            return { url: data.items[0].link, credit: 'Google Images' };
+          }
+        } else {
+          const errText = await res.text().catch(() => '');
+          console.error(`Google CSE error (${res.status}): ${errText.substring(0, 200)}`);
+          break; // Don't waste queries on auth/quota errors
         }
       }
+    } else {
+      console.log('Google CSE not configured — missing GOOGLE_CSE_KEY or GOOGLE_CSE_CX');
     }
-  } catch {}
+  } catch (err) {
+    console.error('Google CSE exception:', err.message);
+  }
 
   // 2. Try Wikimedia Commons (free, no key)
   try {
