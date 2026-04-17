@@ -80,9 +80,9 @@ module.exports = async function handler(req, res) {
     if (err.message?.includes('API_KEY_INVALID') || err.message?.includes('API key not valid')) {
       return res.status(500).json({ error: 'Invalid Gemini API key. Check your GEMINI_API_KEY in Vercel environment variables.' });
     }
-    if (err.message?.includes('quota') || err.message?.includes('RATE_LIMIT') || err.message?.includes('Resource has been exhausted')) {
-      return res.status(500).json({ error: 'Gemini API limit reached. Wait a minute and try again, or check your quota at ai.google.dev.' });
+    if (err.message?.includes('RATE_LIMIT') || err.message?.includes('Resource has been exhausted')) {
+      return res.status(500).json({ error: 'Gemini API limit reached. Wait a minute and try again.' });
     }
-    res.status(500).json({ error: 'Failed to summon monster data: ' + (err.message || 'Unknown error. Try again.') });
+    res.status(500).json({ error: 'Gemini error: ' + (err.message || 'Unknown error. Try again.') });
   }
 };
