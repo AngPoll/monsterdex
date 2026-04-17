@@ -114,7 +114,7 @@ async function generateProfile(monsterName) {
   }
 
   console.error('All profile providers failed:', errors.join(' | '));
-  throw new Error('Our monster database is overwhelmed right now. Please try again in a few seconds!');
+  throw new Error('Sorry monster unavailable, try again soon.');
 }
 
 async function identifyFromImage(base64Data, mimeType) {
@@ -139,27 +139,33 @@ async function identifyFromImage(base64Data, mimeType) {
   }
 
   console.error('All identify providers failed:', errors.join(' | '));
-  throw new Error('Our monster scanner is overwhelmed right now. Please try again in a few seconds!');
+  throw new Error('Sorry monster unavailable, try again soon.');
 }
 
-// ---------- Image search: Wikipedia → Google ----------
+// ---------- Image search: Gemini AI → Google → Wikipedia ----------
 
 async function fetchMonsterImage(monsterName) {
-  // 1. Try Wikipedia
+  // 1. Try Gemini AI-generated image search via Google
   try {
-    const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(monsterName)}`);
-    if (wikiRes.ok) {
-      const wikiData = await wikiRes.json();
-      if (wikiData.originalimage?.source) {
-        return { url: wikiData.originalimage.source, credit: 'Wikipedia — ' + wikiData.title };
-      }
-      if (wikiData.thumbnail?.source) {
-        return { url: wikiData.thumbnail.source, credit: 'Wikipedia — ' + wikiData.title };
+    if (process.env.GEMINI_API_KEY) {
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: `Give me a single direct image URL for the mythological monster "${monsterName}". Return ONLY the URL, nothing else. It should be a real, publicly accessible image URL from a site like deviantart, artstation, pinterest, or wikimedia. No markdown, no explanation.` }] }],
+        generationConfig: { maxOutputTokens: 200 }
+      });
+      const aiUrl = result.response.text().trim();
+      if (aiUrl.startsWith('http') && !aiUrl.includes(' ')) {
+        // Verify the URL is reachable
+        const check = await fetch(aiUrl, { method: 'HEAD' });
+        if (check.ok && (check.headers.get('content-type') || '').startsWith('image')) {
+          return { url: aiUrl, credit: 'AI Curated' };
+        }
       }
     }
   } catch {}
 
-  // 2. Try Google Custom Search (if configured)
+  // 2. Try Google Custom Search
   try {
     const key = process.env.GOOGLE_CSE_KEY || process.env.GEMINI_API_KEY;
     const cx = process.env.GOOGLE_CSE_CX;
@@ -172,6 +178,20 @@ async function fetchMonsterImage(monsterName) {
         if (data.items?.[0]?.link) {
           return { url: data.items[0].link, credit: 'Google Images' };
         }
+      }
+    }
+  } catch {}
+
+  // 3. Try Wikipedia (last resort)
+  try {
+    const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(monsterName)}`);
+    if (wikiRes.ok) {
+      const wikiData = await wikiRes.json();
+      if (wikiData.originalimage?.source) {
+        return { url: wikiData.originalimage.source, credit: 'Wikipedia — ' + wikiData.title };
+      }
+      if (wikiData.thumbnail?.source) {
+        return { url: wikiData.thumbnail.source, credit: 'Wikipedia — ' + wikiData.title };
       }
     }
   } catch {}
