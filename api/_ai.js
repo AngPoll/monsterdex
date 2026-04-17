@@ -142,10 +142,33 @@ async function identifyFromImage(base64Data, mimeType) {
   throw new Error('Sorry monster unavailable, try again soon.');
 }
 
-// ---------- Image search: Google → Wikipedia ----------
+// ---------- Image search: Wikimedia Commons → Google CSE → Wikipedia ----------
 
 async function fetchMonsterImage(monsterName) {
-  // 1. Try Google Custom Search (free: 100 queries/day, cached monsters don't re-query)
+  // 1. Try Wikimedia Commons search (free, no key, best artwork/illustrations)
+  try {
+    const q = encodeURIComponent(monsterName + ' monster');
+    const commonsUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrlimit=5&prop=imageinfo&iiprop=url|mime&iiurlwidth=800&format=json&origin=*`;
+    const commonsRes = await fetch(commonsUrl);
+    if (commonsRes.ok) {
+      const commonsData = await commonsRes.json();
+      const pages = commonsData.query?.pages;
+      if (pages) {
+        // Find the first actual image (not SVG/PDF)
+        for (const page of Object.values(pages)) {
+          const info = page.imageinfo?.[0];
+          if (info && info.mime && info.mime.startsWith('image/') && !info.mime.includes('svg') && !info.mime.includes('pdf')) {
+            const imgUrl = info.thumburl || info.url;
+            if (imgUrl) {
+              return { url: imgUrl, credit: 'Wikimedia Commons' };
+            }
+          }
+        }
+      }
+    }
+  } catch {}
+
+  // 2. Try Google Custom Search (if configured)
   try {
     const key = process.env.GOOGLE_CSE_KEY;
     const cx = process.env.GOOGLE_CSE_CX;
@@ -162,7 +185,7 @@ async function fetchMonsterImage(monsterName) {
     }
   } catch {}
 
-  // 2. Try Wikipedia (fallback)
+  // 3. Try Wikipedia article image (last resort)
   try {
     const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(monsterName)}`);
     if (wikiRes.ok) {
