@@ -488,9 +488,20 @@ function formatLabel(camelCase) {
 
 const HISTORY_KEY = 'monsterdex_history';
 const MAX_HISTORY = 30;
+const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
 
 function getHistory() {
-  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+  try {
+    const all = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    // Filter out entries older than 30 days
+    const now = Date.now();
+    const fresh = all.filter(m => m.timestamp && (now - m.timestamp) < THIRTY_DAYS);
+    // Clean up expired entries
+    if (fresh.length !== all.length) {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(fresh));
+    }
+    return fresh;
+  }
   catch { return []; }
 }
 
