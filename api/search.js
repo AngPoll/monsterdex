@@ -1,5 +1,4 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { MONSTER_SYSTEM_PROMPT } = require('./_prompts');
+const { generateProfile, fetchMonsterImage } = require('./_ai');
 const { getCachedMonster, cacheMonster, isCacheAvailable } = require('./_cache');
 
 module.exports = async function handler(req, res) {
@@ -24,43 +23,13 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // 2. Not cached — call Gemini
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    // 2. Not cached — try Gemini → OpenAI fallback
+    const monsterData = await generateProfile(sanitized);
 
-    const result = await model.generateContent({
-      contents: [{
-        role: 'user',
-        parts: [{ text: MONSTER_SYSTEM_PROMPT + '\n\nTell me everything about this monster: ' + sanitized }]
-      }],
-      generationConfig: {
-        temperature: 0.8,
-        maxOutputTokens: 16000,
-        responseMimeType: 'application/json'
-      }
-    });
-
-    const raw = result.response.text().trim();
-    const monsterData = JSON.parse(raw);
-
-    // 3. Fetch Wikipedia image to store with cache
-    let imageUrl = null;
-    let imageCredit = null;
-    try {
-      const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(monsterData.name)}`);
-      if (wikiRes.ok) {
-        const wikiData = await wikiRes.json();
-        if (wikiData.originalimage?.source) {
-          imageUrl = wikiData.originalimage.source;
-          imageCredit = `Wikipedia — ${wikiData.title}`;
-        } else if (wikiData.thumbnail?.source) {
-          imageUrl = wikiData.thumbnail.source;
-          imageCredit = `Wikipedia — ${wikiData.title}`;
-        }
-      }
-    } catch {
-      // Wikipedia fetch failed — no image, that's fine
-    }
+    // 3. Fetch image: Wikipedia → Google fallback
+    const image = await fetchMonsterImage(monsterData.name || sanitized);
+    const imageUrl = image?.url || null;
+    const imageCredit = image?.credit || null;
 
     // 4. Save to cache (non-blocking)
     if (isCacheAvailable()) {
@@ -74,15 +43,9 @@ module.exports = async function handler(req, res) {
     res.status(200).json(monsterData);
   } catch (err) {
     console.error('Search error:', err.message);
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ error: 'API key not configured. Go to Vercel → Settings → Environment Variables and set GEMINI_API_KEY.' });
+    if (!process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'No AI provider configured. Set GEMINI_API_KEY or OPENAI_API_KEY in Vercel environment variables.' });
     }
-    if (err.message?.includes('API_KEY_INVALID') || err.message?.includes('API key not valid')) {
-      return res.status(500).json({ error: 'Invalid Gemini API key. Check your GEMINI_API_KEY in Vercel environment variables.' });
-    }
-    if (err.message?.includes('RATE_LIMIT') || err.message?.includes('Resource has been exhausted')) {
-      return res.status(500).json({ error: 'Gemini API limit reached. Wait a minute and try again.' });
-    }
-    res.status(500).json({ error: 'Gemini error: ' + (err.message || 'Unknown error. Try again.') });
+    res.status(500).json({ error: 'All AI providers failed: ' + (err.message || 'Unknown error. Try again.') });
   }
 };

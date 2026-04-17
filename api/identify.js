@@ -1,5 +1,4 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { MONSTER_SYSTEM_PROMPT, IDENTIFY_PROMPT } = require('./_prompts');
+const { generateProfile, identifyFromImage, fetchMonsterImage } = require('./_ai');
 const { getCachedMonster, cacheMonster, isCacheAvailable } = require('./_cache');
 
 // Vercel serverless: parse multipart manually (no multer)
@@ -75,22 +74,8 @@ module.exports = async function handler(req, res) {
     const base64Image = imagePart.data.toString('base64');
     const mimeType = imagePart.contentType || 'image/jpeg';
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-    // Step 1 — identify the monster from image
-    const identifyResult = await model.generateContent({
-      contents: [{
-        role: 'user',
-        parts: [
-          { text: IDENTIFY_PROMPT },
-          { inlineData: { mimeType, data: base64Image } }
-        ]
-      }],
-      generationConfig: { maxOutputTokens: 100 }
-    });
-
-    const monsterName = identifyResult.response.text().trim();
+    // Step 1 — identify the monster (Gemini → OpenAI fallback)
+    const monsterName = await identifyFromImage(base64Image, mimeType);
 
     if (monsterName === 'UNKNOWN') {
       return res.status(200).json({
@@ -110,42 +95,28 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // Step 3 — not cached, get full profile from Gemini
-    const dataResult = await model.generateContent({
-      contents: [{
-        role: 'user',
-        parts: [{ text: MONSTER_SYSTEM_PROMPT + '\n\nTell me everything about this monster: ' + monsterName }]
-      }],
-      generationConfig: {
-        temperature: 0.8,
-        maxOutputTokens: 16000,
-        responseMimeType: 'application/json'
-      }
-    });
+    // Step 3 — get full profile (Gemini → OpenAI fallback)
+    const monsterData = await generateProfile(monsterName);
 
-    const raw = dataResult.response.text().trim();
-    const monsterData = JSON.parse(raw);
+    // Step 4 — fetch image (Wikipedia → Google fallback)
+    const image = await fetchMonsterImage(monsterData.name || monsterName);
 
-    // Step 4 — cache the result
+    // Step 5 — cache the result
     if (isCacheAvailable()) {
-      cacheMonster(monsterName, monsterData, null, null).catch(() => {});
+      cacheMonster(monsterName, monsterData, image?.url || null, image?.credit || null).catch(() => {});
     }
 
     monsterData._identified = true;
     monsterData._identifiedAs = monsterName;
+    monsterData._imageUrl = image?.url || null;
+    monsterData._imageCredit = image?.credit || null;
     res.status(200).json(monsterData);
   } catch (err) {
     console.error('Identify error:', err.message);
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ error: 'API key not configured. Go to Vercel → Settings → Environment Variables and set GEMINI_API_KEY.' });
+    if (!process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'No AI provider configured. Set GEMINI_API_KEY or OPENAI_API_KEY in Vercel environment variables.' });
     }
-    if (err.message?.includes('API_KEY_INVALID') || err.message?.includes('API key not valid')) {
-      return res.status(500).json({ error: 'Invalid Gemini API key. Check your GEMINI_API_KEY in Vercel environment variables.' });
-    }
-    if (err.message?.includes('RATE_LIMIT') || err.message?.includes('Resource has been exhausted')) {
-      return res.status(500).json({ error: 'Gemini API limit reached. Wait a minute and try again.' });
-    }
-    res.status(500).json({ error: 'Gemini error: ' + (err.message || 'Unknown error. Try again.') });
+    res.status(500).json({ error: 'All AI providers failed: ' + (err.message || 'Unknown error. Try again.') });
   }
 };
 
