@@ -35,7 +35,7 @@ module.exports = async function handler(req, res) {
       }],
       generationConfig: {
         temperature: 0.8,
-        maxOutputTokens: 3000,
+        maxOutputTokens: 16000,
         responseMimeType: 'application/json'
       }
     });

@@ -89,7 +89,7 @@ app.post('/api/search', async (req, res) => {
       }],
       generationConfig: {
         temperature: 0.8,
-        maxOutputTokens: 3000,
+        maxOutputTokens: 16000,
         responseMimeType: 'application/json'
       }
     });
@@ -145,7 +145,7 @@ app.post('/api/identify', upload.single('image'), async (req, res) => {
       }],
       generationConfig: {
         temperature: 0.8,
-        maxOutputTokens: 3000,
+        maxOutputTokens: 16000,
         responseMimeType: 'application/json'
       }
     });
