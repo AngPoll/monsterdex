@@ -1,4 +1,4 @@
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { MONSTER_SYSTEM_PROMPT } = require('./_prompts');
 const { getCachedMonster, cacheMonster, isCacheAvailable } = require('./_cache');
 
@@ -24,20 +24,23 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // 2. Not cached — call OpenAI
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // 2. Not cached — call Gemini
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: MONSTER_SYSTEM_PROMPT },
-        { role: 'user', content: `Tell me everything about this monster: ${sanitized}` }
-      ],
-      temperature: 0.8,
-      max_tokens: 3000
+    const result = await model.generateContent({
+      contents: [{
+        role: 'user',
+        parts: [{ text: MONSTER_SYSTEM_PROMPT + '\n\nTell me everything about this monster: ' + sanitized }]
+      }],
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 3000,
+        responseMimeType: 'application/json'
+      }
     });
 
-    const raw = completion.choices[0].message.content.trim();
+    const raw = result.response.text().trim();
     const monsterData = JSON.parse(raw);
 
     // 3. Fetch Wikipedia image to store with cache
@@ -71,17 +74,14 @@ module.exports = async function handler(req, res) {
     res.status(200).json(monsterData);
   } catch (err) {
     console.error('Search error:', err.message);
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-api-key-here') {
-      return res.status(500).json({ error: 'API key not configured. Go to Vercel → Settings → Environment Variables and set OPENAI_API_KEY.' });
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'API key not configured. Go to Vercel → Settings → Environment Variables and set GEMINI_API_KEY.' });
     }
-    if (err.message?.includes('API key') || err.message?.includes('Incorrect API') || err.message?.includes('invalid_api_key')) {
-      return res.status(500).json({ error: 'Invalid API key. Check your OPENAI_API_KEY in Vercel environment variables.' });
+    if (err.message?.includes('API_KEY_INVALID') || err.message?.includes('API key not valid')) {
+      return res.status(500).json({ error: 'Invalid Gemini API key. Check your GEMINI_API_KEY in Vercel environment variables.' });
     }
-    if (err.message?.includes('model') || err.message?.includes('does not exist')) {
-      return res.status(500).json({ error: 'Your OpenAI account may not have access to GPT-4o. Check your plan at platform.openai.com.' });
-    }
-    if (err.message?.includes('quota') || err.message?.includes('billing') || err.message?.includes('rate_limit')) {
-      return res.status(500).json({ error: 'OpenAI API limit reached. Check your billing at platform.openai.com.' });
+    if (err.message?.includes('quota') || err.message?.includes('RATE_LIMIT') || err.message?.includes('Resource has been exhausted')) {
+      return res.status(500).json({ error: 'Gemini API limit reached. Wait a minute and try again, or check your quota at ai.google.dev.' });
     }
     res.status(500).json({ error: 'Failed to summon monster data: ' + (err.message || 'Unknown error. Try again.') });
   }

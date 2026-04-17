@@ -1,4 +1,4 @@
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { MONSTER_SYSTEM_PROMPT, IDENTIFY_PROMPT } = require('./_prompts');
 const { getCachedMonster, cacheMonster, isCacheAvailable } = require('./_cache');
 
@@ -75,24 +75,22 @@ module.exports = async function handler(req, res) {
     const base64Image = imagePart.data.toString('base64');
     const mimeType = imagePart.contentType || 'image/jpeg';
 
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-    // Step 1 — identify the monster
-    const identifyResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: IDENTIFY_PROMPT },
-            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Image}` } }
-          ]
-        }
-      ],
-      max_tokens: 100
+    // Step 1 — identify the monster from image
+    const identifyResult = await model.generateContent({
+      contents: [{
+        role: 'user',
+        parts: [
+          { text: IDENTIFY_PROMPT },
+          { inlineData: { mimeType, data: base64Image } }
+        ]
+      }],
+      generationConfig: { maxOutputTokens: 100 }
     });
 
-    const monsterName = identifyResponse.choices[0].message.content.trim();
+    const monsterName = identifyResult.response.text().trim();
 
     if (monsterName === 'UNKNOWN') {
       return res.status(200).json({
@@ -112,18 +110,20 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // Step 3 — not cached, get full profile from OpenAI
-    const dataResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: MONSTER_SYSTEM_PROMPT },
-        { role: 'user', content: `Tell me everything about this monster: ${monsterName}` }
-      ],
-      temperature: 0.8,
-      max_tokens: 3000
+    // Step 3 — not cached, get full profile from Gemini
+    const dataResult = await model.generateContent({
+      contents: [{
+        role: 'user',
+        parts: [{ text: MONSTER_SYSTEM_PROMPT + '\n\nTell me everything about this monster: ' + monsterName }]
+      }],
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 3000,
+        responseMimeType: 'application/json'
+      }
     });
 
-    const raw = dataResponse.choices[0].message.content.trim();
+    const raw = dataResult.response.text().trim();
     const monsterData = JSON.parse(raw);
 
     // Step 4 — cache the result
@@ -136,14 +136,14 @@ module.exports = async function handler(req, res) {
     res.status(200).json(monsterData);
   } catch (err) {
     console.error('Identify error:', err.message);
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-api-key-here') {
-      return res.status(500).json({ error: 'API key not configured. Go to Vercel → Settings → Environment Variables and set OPENAI_API_KEY.' });
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'API key not configured. Go to Vercel → Settings → Environment Variables and set GEMINI_API_KEY.' });
     }
-    if (err.message?.includes('API key') || err.message?.includes('Incorrect API') || err.message?.includes('invalid_api_key')) {
-      return res.status(500).json({ error: 'Invalid API key. Check your OPENAI_API_KEY in Vercel environment variables.' });
+    if (err.message?.includes('API_KEY_INVALID') || err.message?.includes('API key not valid')) {
+      return res.status(500).json({ error: 'Invalid Gemini API key. Check your GEMINI_API_KEY in Vercel environment variables.' });
     }
-    if (err.message?.includes('quota') || err.message?.includes('billing') || err.message?.includes('rate_limit')) {
-      return res.status(500).json({ error: 'OpenAI API limit reached. Check your billing at platform.openai.com.' });
+    if (err.message?.includes('quota') || err.message?.includes('RATE_LIMIT') || err.message?.includes('Resource has been exhausted')) {
+      return res.status(500).json({ error: 'Gemini API limit reached. Wait a minute and try again.' });
     }
     res.status(500).json({ error: 'Failed to identify the creature: ' + (err.message || 'Unknown error. Try again.') });
   }
