@@ -142,33 +142,10 @@ async function identifyFromImage(base64Data, mimeType) {
   throw new Error('Sorry monster unavailable, try again soon.');
 }
 
-// ---------- Image search: Wikimedia Commons → Google CSE → Wikipedia ----------
+// ---------- Image search: Google → Wikimedia Commons → Wikipedia ----------
 
 async function fetchMonsterImage(monsterName) {
-  // 1. Try Wikimedia Commons search (free, no key, best artwork/illustrations)
-  try {
-    const q = encodeURIComponent(monsterName + ' monster');
-    const commonsUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrlimit=5&prop=imageinfo&iiprop=url|mime&iiurlwidth=800&format=json&origin=*`;
-    const commonsRes = await fetch(commonsUrl);
-    if (commonsRes.ok) {
-      const commonsData = await commonsRes.json();
-      const pages = commonsData.query?.pages;
-      if (pages) {
-        // Find the first actual image (not SVG/PDF)
-        for (const page of Object.values(pages)) {
-          const info = page.imageinfo?.[0];
-          if (info && info.mime && info.mime.startsWith('image/') && !info.mime.includes('svg') && !info.mime.includes('pdf')) {
-            const imgUrl = info.thumburl || info.url;
-            if (imgUrl) {
-              return { url: imgUrl, credit: 'Wikimedia Commons' };
-            }
-          }
-        }
-      }
-    }
-  } catch {}
-
-  // 2. Try Google Custom Search (if configured)
+  // 1. Try Google Custom Search (best images)
   try {
     const key = process.env.GOOGLE_CSE_KEY;
     const cx = process.env.GOOGLE_CSE_CX;
@@ -180,6 +157,28 @@ async function fetchMonsterImage(monsterName) {
         const data = await res.json();
         if (data.items?.[0]?.link) {
           return { url: data.items[0].link, credit: 'Google Images' };
+        }
+      }
+    }
+  } catch {}
+
+  // 2. Try Wikimedia Commons (free, no key)
+  try {
+    const q = encodeURIComponent(monsterName + ' monster');
+    const commonsUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrlimit=5&prop=imageinfo&iiprop=url|mime&iiurlwidth=800&format=json&origin=*`;
+    const commonsRes = await fetch(commonsUrl);
+    if (commonsRes.ok) {
+      const commonsData = await commonsRes.json();
+      const pages = commonsData.query?.pages;
+      if (pages) {
+        for (const page of Object.values(pages)) {
+          const info = page.imageinfo?.[0];
+          if (info && info.mime && info.mime.startsWith('image/') && !info.mime.includes('svg') && !info.mime.includes('pdf')) {
+            const imgUrl = info.thumburl || info.url;
+            if (imgUrl) {
+              return { url: imgUrl, credit: 'Wikimedia Commons' };
+            }
+          }
         }
       }
     }
