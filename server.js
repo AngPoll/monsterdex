@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const path = require('path');
 require('dotenv').config();
 
@@ -13,8 +13,9 @@ const upload = multer({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ---------- OpenAI client ----------
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// ---------- Gemini client ----------
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
 // ---------- Prompts ----------
 const MONSTER_SYSTEM_PROMPT = `You are MonsterDex, the ultimate encyclopedia of monsters, cryptids, mythological creatures, and legendary beasts from folklore, mythology, fiction, and urban legends worldwide.
@@ -81,23 +82,25 @@ app.post('/api/search', async (req, res) => {
 
     const sanitized = query.trim().substring(0, 200);
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: MONSTER_SYSTEM_PROMPT },
-        { role: 'user', content: `Tell me everything about this monster: ${sanitized}` }
-      ],
-      temperature: 0.8,
-      max_tokens: 3000
+    const result = await model.generateContent({
+      contents: [{
+        role: 'user',
+        parts: [{ text: MONSTER_SYSTEM_PROMPT + '\n\nTell me everything about this monster: ' + sanitized }]
+      }],
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 3000,
+        responseMimeType: 'application/json'
+      }
     });
 
-    const raw = completion.choices[0].message.content.trim();
+    const raw = result.response.text().trim();
     const monsterData = JSON.parse(raw);
     res.json(monsterData);
   } catch (err) {
     console.error('Search error:', err.message);
-    if (err.message?.includes('API key') || err.message?.includes('Incorrect API')) {
-      return res.status(500).json({ error: 'API key not configured. Add your OpenAI key to the .env file.' });
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'API key not configured. Add your GEMINI_API_KEY to the .env file.' });
     }
     res.status(500).json({ error: 'Failed to summon monster data. The beast evades us… try again.' });
   }
@@ -114,21 +117,18 @@ app.post('/api/identify', upload.single('image'), async (req, res) => {
     const mimeType = req.file.mimetype;
 
     // Step 1 — identify the monster from the image
-    const identifyResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: IDENTIFY_PROMPT },
-            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Image}` } }
-          ]
-        }
-      ],
-      max_tokens: 100
+    const identifyResult = await model.generateContent({
+      contents: [{
+        role: 'user',
+        parts: [
+          { text: IDENTIFY_PROMPT },
+          { inlineData: { mimeType, data: base64Image } }
+        ]
+      }],
+      generationConfig: { maxOutputTokens: 100 }
     });
 
-    const monsterName = identifyResponse.choices[0].message.content.trim();
+    const monsterName = identifyResult.response.text().trim();
 
     if (monsterName === 'UNKNOWN') {
       return res.json({
@@ -138,25 +138,27 @@ app.post('/api/identify', upload.single('image'), async (req, res) => {
     }
 
     // Step 2 — get full monster profile
-    const dataResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: MONSTER_SYSTEM_PROMPT },
-        { role: 'user', content: `Tell me everything about this monster: ${monsterName}` }
-      ],
-      temperature: 0.8,
-      max_tokens: 3000
+    const dataResult = await model.generateContent({
+      contents: [{
+        role: 'user',
+        parts: [{ text: MONSTER_SYSTEM_PROMPT + '\n\nTell me everything about this monster: ' + monsterName }]
+      }],
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 3000,
+        responseMimeType: 'application/json'
+      }
     });
 
-    const raw = dataResponse.choices[0].message.content.trim();
+    const raw = dataResult.response.text().trim();
     const monsterData = JSON.parse(raw);
     monsterData._identified = true;
     monsterData._identifiedAs = monsterName;
     res.json(monsterData);
   } catch (err) {
     console.error('Identify error:', err.message);
-    if (err.message?.includes('API key') || err.message?.includes('Incorrect API')) {
-      return res.status(500).json({ error: 'API key not configured. Add your OpenAI key to the .env file.' });
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'API key not configured. Add your GEMINI_API_KEY to the .env file.' });
     }
     res.status(500).json({ error: 'Failed to identify the creature. The image is too dark, or the beast does not wish to be known…' });
   }
