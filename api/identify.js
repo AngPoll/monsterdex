@@ -114,9 +114,9 @@ module.exports = async function handler(req, res) {
   } catch (err) {
     console.error('Identify error:', err.message);
     if (!process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ error: 'No AI provider configured. Set GEMINI_API_KEY or OPENAI_API_KEY in Vercel environment variables.' });
+      return res.status(500).json({ error: 'MonsterDex is not configured yet. Please contact the site owner.' });
     }
-    res.status(500).json({ error: 'All AI providers failed: ' + (err.message || 'Unknown error. Try again.') });
+    res.status(500).json({ error: err.message || 'Something went wrong. Please try again.' });
   }
 };
 

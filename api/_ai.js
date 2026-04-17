@@ -1,33 +1,55 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { MONSTER_SYSTEM_PROMPT, IDENTIFY_PROMPT } = require('./_prompts');
 
-// ---------- Provider: Gemini ----------
+// ---------- Helpers ----------
 
-async function geminiProfile(monsterName) {
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function isRetryable(err) {
+  const msg = (err.message || '').toLowerCase();
+  return msg.includes('503') || msg.includes('service unavailable') || msg.includes('overloaded') || msg.includes('high demand');
+}
+
+// ---------- Provider: Gemini (with retry on 503) ----------
+
+async function geminiCall(contentConfig, genConfig) {
   if (!process.env.GEMINI_API_KEY) return null;
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-  const result = await model.generateContent({
-    contents: [{ role: 'user', parts: [{ text: MONSTER_SYSTEM_PROMPT + '\n\nTell me everything about this monster: ' + monsterName }] }],
-    generationConfig: { temperature: 0.8, maxOutputTokens: 16000, responseMimeType: 'application/json' }
-  });
-  return JSON.parse(result.response.text().trim());
+  const MAX_RETRIES = 3;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const result = await model.generateContent({ contents: contentConfig, generationConfig: genConfig });
+      return result.response.text().trim();
+    } catch (err) {
+      if (isRetryable(err) && attempt < MAX_RETRIES - 1) {
+        console.log(`Gemini 503 — retrying in ${(attempt + 1) * 2}s (attempt ${attempt + 1}/${MAX_RETRIES})`);
+        await sleep((attempt + 1) * 2000);
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+async function geminiProfile(monsterName) {
+  const text = await geminiCall(
+    [{ role: 'user', parts: [{ text: MONSTER_SYSTEM_PROMPT + '\n\nTell me everything about this monster: ' + monsterName }] }],
+    { temperature: 0.8, maxOutputTokens: 16000, responseMimeType: 'application/json' }
+  );
+  return text ? JSON.parse(text) : null;
 }
 
 async function geminiIdentify(base64Data, mimeType) {
-  if (!process.env.GEMINI_API_KEY) return null;
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-  const result = await model.generateContent({
-    contents: [{ role: 'user', parts: [
+  const text = await geminiCall(
+    [{ role: 'user', parts: [
       { text: IDENTIFY_PROMPT },
       { inlineData: { mimeType, data: base64Data } }
     ] }],
-    generationConfig: { maxOutputTokens: 100 }
-  });
-  return result.response.text().trim();
+    { maxOutputTokens: 100 }
+  );
+  return text || null;
 }
 
 // ---------- Provider: OpenAI ----------
@@ -91,7 +113,8 @@ async function generateProfile(monsterName) {
     console.error('OpenAI profile error:', err.message);
   }
 
-  throw new Error(errors.length ? errors.join(' | ') : 'No AI provider configured. Set GEMINI_API_KEY or OPENAI_API_KEY.');
+  console.error('All profile providers failed:', errors.join(' | '));
+  throw new Error('Our monster database is overwhelmed right now. Please try again in a few seconds!');
 }
 
 async function identifyFromImage(base64Data, mimeType) {
@@ -115,7 +138,8 @@ async function identifyFromImage(base64Data, mimeType) {
     console.error('OpenAI identify error:', err.message);
   }
 
-  throw new Error(errors.length ? errors.join(' | ') : 'No AI provider configured. Set GEMINI_API_KEY or OPENAI_API_KEY.');
+  console.error('All identify providers failed:', errors.join(' | '));
+  throw new Error('Our monster scanner is overwhelmed right now. Please try again in a few seconds!');
 }
 
 // ---------- Image search: Wikipedia → Google ----------
