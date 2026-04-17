@@ -295,7 +295,7 @@ async function showResult(monster) {
     }
   }
 
-  resultEl.innerHTML = renderMonsterCard(monster, imageUrl, imageCredit);
+  resultEl.innerHTML = `<div class="sticky-back" onclick="goBack()">← Back to Monster Search</div>` + renderMonsterCard(monster, imageUrl, imageCredit);
   resultEl.classList.remove('hidden');
   renderPastSearches();
   window.scrollTo({ top: resultEl.offsetTop - 20, behavior: 'smooth' });
@@ -450,8 +450,6 @@ function renderMonsterCard(m, imageUrl, imageCredit) {
         </div>` : ''}
       </div>
     </div>
-
-    <button class="back-btn" onclick="goBack()">← BACK TO FIELD GUIDE</button>
   `;
 }
 
