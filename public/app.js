@@ -1,5 +1,5 @@
 /* =============================================
-   MonsterDex — Frontend Logic
+   MonsterDex v2 — Frontend Logic
    ============================================= */
 
 // ---- DOM Refs ----
@@ -14,20 +14,19 @@ const loadingEl     = document.getElementById('loading');
 const loadingText   = document.getElementById('loading-text');
 const errorEl       = document.getElementById('error-state');
 const resultEl      = document.getElementById('result');
+const homepageEl    = document.getElementById('homepage');
 const cameraModal   = document.getElementById('camera-modal');
-const cameraFeed    = document.getElementById('camera-feed');
-const cameraCanvas  = document.getElementById('camera-canvas');
-const cameraCapture = document.getElementById('camera-capture');
-const cameraSwitch  = document.getElementById('camera-switch');
 const cameraClose   = document.getElementById('camera-close');
+const identifyBtn   = document.getElementById('identify-btn');
+const previewImg    = document.getElementById('preview-img');
+const uploadArea    = document.getElementById('upload-area');
 const pastSearchesEl    = document.getElementById('past-searches');
 const pastSearchesList  = document.getElementById('past-searches-list');
 const clearHistoryBtn   = document.getElementById('clear-history');
 
 // ---- State ----
-let currentStream = null;
-let facingMode = 'environment';
 let userImageDataUrl = null;
+let selectedFile = null;
 
 // ---- Loading messages ----
 const LOADING_MSGS = [
@@ -46,37 +45,70 @@ const LOADING_MSGS = [
 
 searchForm.addEventListener('submit', handleSearch);
 
-// Camera: on mobile, use native file picker with capture; on desktop, use getUserMedia
-btnCamera.addEventListener('click', () => {
-  if (isMobile()) {
-    cameraInput.click();
-  } else {
-    openCamera();
-  }
-});
-
-cameraInput.addEventListener('change', handleFileUpload);
-
-btnUpload.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', handleFileUpload);
-
-cameraCapture.addEventListener('click', capturePhoto);
-cameraSwitch.addEventListener('click', switchCamera);
-cameraClose.addEventListener('click', closeCamera);
-clearHistoryBtn.addEventListener('click', clearHistory);
-
-// Suggestion buttons
-suggestionsEl.querySelectorAll('button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    searchInput.value = btn.dataset.monster;
+// Chips (span elements)
+suggestionsEl.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    searchInput.value = chip.dataset.monster;
     searchForm.dispatchEvent(new Event('submit'));
   });
 });
 
-// Close camera on Escape
+// Camera button — on mobile use native capture, else open modal
+btnCamera.addEventListener('click', () => {
+  if (isMobile()) {
+    cameraInput.click();
+  } else {
+    openModal();
+  }
+});
+
+cameraInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  fileToDataUrl(file).then(url => { userImageDataUrl = url; });
+  identifyMonster(file);
+  cameraInput.value = '';
+});
+
+// Upload button opens modal
+btnUpload.addEventListener('click', openModal);
+
+// File input inside modal
+fileInput.addEventListener('change', handleModalFile);
+
+// Identify button in modal
+identifyBtn.addEventListener('click', () => {
+  if (selectedFile) {
+    closeModal();
+    identifyMonster(selectedFile);
+  }
+});
+
+// Modal close
+cameraClose.addEventListener('click', closeModal);
+
+// Close modal on background click
+cameraModal.addEventListener('click', (e) => {
+  if (e.target === cameraModal) closeModal();
+});
+
+// Escape key closes modal
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && !cameraModal.classList.contains('hidden')) {
-    closeCamera();
+  if (e.key === 'Escape' && cameraModal.classList.contains('show')) closeModal();
+});
+
+// Clear history
+clearHistoryBtn.addEventListener('click', clearHistory);
+
+// Drag and drop on upload area
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.style.borderColor = '#c0392b'; });
+uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = '#c0a882'; });
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadArea.style.borderColor = '#c0a882';
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    previewFile(file);
   }
 });
 
@@ -93,6 +125,51 @@ function isMobile() {
 }
 
 // ============================
+//   Modal
+// ============================
+
+function openModal() {
+  selectedFile = null;
+  previewImg.style.display = 'none';
+  previewImg.src = '';
+  uploadArea.style.display = '';
+  identifyBtn.style.display = 'none';
+  cameraModal.classList.add('show');
+}
+
+function closeModal() {
+  cameraModal.classList.remove('show');
+  selectedFile = null;
+  fileInput.value = '';
+}
+
+function handleModalFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  previewFile(file);
+}
+
+function previewFile(file) {
+  selectedFile = file;
+  fileToDataUrl(file).then(url => {
+    userImageDataUrl = url;
+    previewImg.src = url;
+    previewImg.style.display = 'block';
+    uploadArea.style.display = 'none';
+    identifyBtn.style.display = '';
+  });
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ============================
 //   Search
 // ============================
 
@@ -101,7 +178,7 @@ async function handleSearch(e) {
   const query = searchInput.value.trim();
   if (!query) return;
 
-  userImageDataUrl = null; // text search — no user image
+  userImageDataUrl = null;
   showLoading();
 
   try {
@@ -118,7 +195,6 @@ async function handleSearch(e) {
     }
 
     const data = await res.json();
-
     if (data.error && !data.name) {
       showError(data.error, data.suggestion);
     } else {
@@ -131,102 +207,7 @@ async function handleSearch(e) {
 }
 
 // ============================
-//   Camera
-// ============================
-
-async function openCamera() {
-  cameraModal.classList.remove('hidden');
-  try {
-    await startCamera();
-  } catch (err) {
-    closeCamera();
-    showError('Could not access camera. Please allow camera permissions or try uploading an image instead.');
-  }
-}
-
-async function startCamera() {
-  // Stop any existing stream
-  stopCamera();
-
-  const constraints = {
-    video: { facingMode, width: { ideal: 1280 }, height: { ideal: 960 } },
-    audio: false
-  };
-
-  currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-  cameraFeed.srcObject = currentStream;
-}
-
-function stopCamera() {
-  if (currentStream) {
-    currentStream.getTracks().forEach(t => t.stop());
-    currentStream = null;
-  }
-  cameraFeed.srcObject = null;
-}
-
-function closeCamera() {
-  stopCamera();
-  cameraModal.classList.add('hidden');
-}
-
-async function switchCamera() {
-  facingMode = facingMode === 'environment' ? 'user' : 'environment';
-  try {
-    await startCamera();
-  } catch {
-    // If switching fails, flip back
-    facingMode = facingMode === 'environment' ? 'user' : 'environment';
-  }
-}
-
-async function capturePhoto() {
-  const ctx = cameraCanvas.getContext('2d');
-  cameraCanvas.width = cameraFeed.videoWidth;
-  cameraCanvas.height = cameraFeed.videoHeight;
-  ctx.drawImage(cameraFeed, 0, 0);
-
-  closeCamera();
-
-  cameraCanvas.toBlob(async blob => {
-    if (!blob) {
-      showError('Failed to capture photo. Please try again.');
-      return;
-    }
-    // Save data URL for card display
-    userImageDataUrl = cameraCanvas.toDataURL('image/jpeg', 0.85);
-    await identifyMonster(blob);
-  }, 'image/jpeg', 0.85);
-}
-
-// ============================
-//   File Upload
-// ============================
-
-async function handleFileUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  // Save data URL for card display
-  userImageDataUrl = await fileToDataUrl(file);
-  await identifyMonster(file);
-
-  // Reset both inputs so the same file can be selected again
-  fileInput.value = '';
-  cameraInput.value = '';
-}
-
-function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-// ============================
-//   Identify (shared by camera + upload)
+//   Identify (camera + upload)
 // ============================
 
 async function identifyMonster(blob) {
@@ -248,7 +229,6 @@ async function identifyMonster(blob) {
     }
 
     const data = await res.json();
-
     if (data.error && !data.name) {
       showError(data.error, data.suggestion);
     } else {
@@ -268,7 +248,7 @@ function showLoading(msg) {
   loadingText.textContent = msg || LOADING_MSGS[Math.floor(Math.random() * LOADING_MSGS.length)];
   errorEl.classList.add('hidden');
   resultEl.classList.add('hidden');
-  suggestionsEl.classList.add('hidden');
+  homepageEl.style.display = 'none';
   loadingEl.classList.remove('hidden');
   window.scrollTo({ top: loadingEl.offsetTop - 20, behavior: 'smooth' });
 }
@@ -280,15 +260,11 @@ function hideLoading() {
 function showError(message, suggestion) {
   hideLoading();
   resultEl.classList.add('hidden');
-  suggestionsEl.classList.remove('hidden');
+  homepageEl.style.display = '';
 
   errorEl.innerHTML = `
-    <div class="error-box">
-      <div class="error-icon">😵</div>
-      <div class="error-message">${escapeHtml(message)}</div>
-      ${suggestion ? `<div class="error-suggestion">${escapeHtml(suggestion)}</div>` : ''}
-      <button class="btn-retry" onclick="document.getElementById('search-input').focus()">Try Again</button>
-    </div>
+    😵 ${escapeHtml(message)}
+    ${suggestion ? `<br><small>${escapeHtml(suggestion)}</small>` : ''}
   `;
   errorEl.classList.remove('hidden');
   window.scrollTo({ top: errorEl.offsetTop - 20, behavior: 'smooth' });
@@ -297,12 +273,11 @@ function showError(message, suggestion) {
 async function showResult(monster) {
   hideLoading();
   errorEl.classList.add('hidden');
-  suggestionsEl.classList.remove('hidden');
+  homepageEl.style.display = 'none';
 
-  // Save to past searches
   saveToHistory(monster);
 
-  // Determine image: user photo > server cache > Wikipedia fetch
+  // Determine image: user photo > server > Wikipedia
   let imageUrl = null;
   let imageCredit = null;
 
@@ -310,11 +285,9 @@ async function showResult(monster) {
     imageUrl = userImageDataUrl;
     imageCredit = 'Your captured image';
   } else if (monster._imageUrl) {
-    // Image was cached by the server
     imageUrl = monster._imageUrl;
     imageCredit = monster._imageCredit || null;
   } else {
-    // Fallback: fetch from Wikipedia client-side
     const wikiImg = await fetchWikipediaImage(monster.name);
     if (wikiImg) {
       imageUrl = wikiImg.url;
@@ -328,6 +301,15 @@ async function showResult(monster) {
   window.scrollTo({ top: resultEl.offsetTop - 20, behavior: 'smooth' });
 }
 
+function goBack() {
+  resultEl.classList.add('hidden');
+  errorEl.classList.add('hidden');
+  homepageEl.style.display = '';
+  searchInput.value = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.goBack = goBack;
+
 // ============================
 //   Wikipedia Image Fetch
 // ============================
@@ -337,28 +319,15 @@ async function fetchWikipediaImage(monsterName) {
     const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(monsterName)}`;
     const res = await fetch(url);
     if (!res.ok) return null;
-
     const data = await res.json();
-    if (data.originalimage?.source) {
-      return {
-        url: data.originalimage.source,
-        credit: `Wikipedia — ${data.title}`
-      };
-    }
-    if (data.thumbnail?.source) {
-      return {
-        url: data.thumbnail.source,
-        credit: `Wikipedia — ${data.title}`
-      };
-    }
+    if (data.originalimage?.source) return { url: data.originalimage.source, credit: `Wikipedia — ${data.title}` };
+    if (data.thumbnail?.source) return { url: data.thumbnail.source, credit: `Wikipedia — ${data.title}` };
     return null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 // ============================
-//   Render Monster Card
+//   Render Monster Card (v2 retro style)
 // ============================
 
 function renderMonsterCard(m, imageUrl, imageCredit) {
@@ -371,123 +340,119 @@ function renderMonsterCard(m, imageUrl, imageCredit) {
   let imageSection;
   if (imageUrl) {
     imageSection = `
-      <div class="card-img-wrap">
-        <img src="${escapeAttr(imageUrl)}" alt="${escapeAttr(m.name)}" class="monster-img"
-             onerror="this.parentElement.outerHTML = renderPlaceholder('${escapeAttr(m.emoji || '👹')}')">
-        <div class="img-overlay"></div>
-        ${imageCredit ? `<div class="img-credit">${escapeHtml(imageCredit)}</div>` : ''}
-      </div>
-    `;
+      <div class="result-img-wrap">
+        <img src="${escapeAttr(imageUrl)}" alt="${escapeAttr(m.name)}" class="result-img"
+             onerror="this.parentElement.innerHTML='<div class=result-img-placeholder><span>${m.emoji || '👹'}</span></div>'">
+        <div class="result-img-overlay"></div>
+      </div>`;
   } else {
     imageSection = `
-      <div class="card-img-placeholder">
+      <div class="result-img-placeholder">
         <span>${m.emoji || '👹'}</span>
-        <div class="img-overlay"></div>
-      </div>
-    `;
+      </div>`;
   }
 
-  // Stats
-  const statsHtml = m.stats ? Object.entries(m.stats).map(([key, val]) => `
-    <div class="stat-block">
-      <div class="stat-label">${escapeHtml(formatLabel(key))}</div>
-      <div class="stat-value">${escapeHtml(val)}</div>
-    </div>
-  `).join('') : '';
+  // Stats — handle both object ({str:'High'}) and array ([{label:'Str',value:'High'}]) formats
+  let statsHtml = '';
+  if (m.stats) {
+    if (Array.isArray(m.stats)) {
+      statsHtml = m.stats.map(s => `
+        <div class="rstat-block">
+          <div class="rstat-label">${escapeHtml(s.label)}</div>
+          <div class="rstat-value">${escapeHtml(s.value)}</div>
+        </div>`).join('');
+    } else {
+      statsHtml = Object.entries(m.stats).map(([key, val]) => `
+        <div class="rstat-block">
+          <div class="rstat-label">${escapeHtml(formatLabel(key))}</div>
+          <div class="rstat-value">${escapeHtml(val)}</div>
+        </div>`).join('');
+    }
+  }
 
-  // Abilities
-  const abilitiesHtml = Array.isArray(m.abilities) ? m.abilities.map(a => `
-    <div class="ability-item">
-      <span class="icon">${a.icon || '⚡'}</span>
-      <span><strong>${escapeHtml(a.name)}</strong> — ${escapeHtml(a.description)}</span>
-    </div>
-  `).join('') : '';
+  // Abilities — handle both {name,description} and {text} formats
+  const abilitiesHtml = Array.isArray(m.abilities) ? m.abilities.map(a => {
+    const text = a.text || (a.name ? `<strong>${escapeHtml(a.name)}</strong> — ${escapeHtml(a.description)}` : escapeHtml(String(a)));
+    const icon = a.icon || '⚡';
+    return `<div class="rability"><span class="icon">${icon}</span><span>${a.text ? escapeHtml(a.text) : text}</span></div>`;
+  }).join('') : '';
 
   // Weaknesses
-  const weaknessesHtml = Array.isArray(m.weaknesses) ? m.weaknesses.map(w => `
-    <span class="weakness-tag">${escapeHtml(w)}</span>
-  `).join('') : '';
+  const weaknessesHtml = Array.isArray(m.weaknesses) ? m.weaknesses.map(w =>
+    `<span class="rweak">${escapeHtml(w)}</span>`
+  ).join('') : '';
 
   // Appearances
-  const appearancesHtml = Array.isArray(m.appearances) ? m.appearances.map(a => `
-    <div class="appearance-item">${escapeHtml(a)}</div>
-  `).join('') : '';
+  const appearancesHtml = Array.isArray(m.appearances) ? m.appearances.map(a =>
+    `<div class="rappear">${escapeHtml(a)}</div>`
+  ).join('') : '';
 
-  // Identified banner (for camera/upload results)
+  // Lore text (our API uses "lore", v2 used "description")
+  const loreText = m.lore || m.description || 'No lore available.';
+
+  // Identified banner
   const identifiedHtml = m._identified ? `
     <div class="identified-banner">
       📷 Identified as <strong>&nbsp;${escapeHtml(m._identifiedAs || m.name)}&nbsp;</strong> from your image
-    </div>
-  ` : '';
+    </div>` : '';
 
   return `
     <div class="result-card">
       ${imageSection}
 
-      <div class="card-header">
-        <div class="monster-name">${escapeHtml(m.name)}</div>
-        ${akaText ? `<div class="monster-aka">${escapeHtml(akaText)}</div>` : ''}
-        <div class="badge-row">
-          <span class="badge badge-origin">${escapeHtml(m.origin || 'Unknown Origin')}</span>
-          <span class="badge badge-type">${escapeHtml(m.type || 'Unknown Type')}</span>
-          <span class="badge badge-danger">${skulls} ${escapeHtml(m.dangerLabel || 'Unknown')}</span>
+      <div class="result-header">
+        <div class="result-name">${escapeHtml(m.name)}</div>
+        ${akaText ? `<div class="result-aka">${escapeHtml(akaText)}</div>` : ''}
+        <div class="result-badges">
+          <span class="rbadge rbadge-origin">${escapeHtml(m.origin || 'Unknown')}</span>
+          <span class="rbadge rbadge-type">${escapeHtml(m.type || 'Unknown')}</span>
+          <span class="rbadge rbadge-danger">${skulls} ${escapeHtml(m.dangerLabel || 'Unknown')}</span>
         </div>
-        <span class="card-header-emoji">${m.emoji || '👹'}</span>
       </div>
 
-      <div class="card-body">
+      <div class="result-body">
         ${identifiedHtml}
 
         <div>
-          <div class="section-label">📖 Origins & Lore</div>
-          <div class="description-text">${escapeHtml(m.lore || 'No lore available.')}</div>
+          <div class="rsection">📖 Origins &amp; Lore</div>
+          <div class="rdesc">${escapeHtml(loreText)}</div>
         </div>
 
         ${statsHtml ? `
         <div>
-          <div class="section-label">📊 Monster Profile</div>
-          <div class="stat-grid">${statsHtml}</div>
-        </div>
-        ` : ''}
+          <div class="rsection">📊 Monster Profile</div>
+          <div class="rstat-grid">${statsHtml}</div>
+        </div>` : ''}
 
         ${abilitiesHtml ? `
         <div>
-          <div class="section-label">⚡ Abilities & Powers</div>
-          <div class="abilities-list">${abilitiesHtml}</div>
-        </div>
-        ` : ''}
+          <div class="rsection">⚡ Abilities &amp; Powers</div>
+          <div class="rabilities">${abilitiesHtml}</div>
+        </div>` : ''}
 
         ${weaknessesHtml ? `
         <div>
-          <div class="section-label">🛡️ Weaknesses</div>
-          <div class="weaknesses-list">${weaknessesHtml}</div>
-        </div>
-        ` : ''}
+          <div class="rsection">🛡️ Weaknesses</div>
+          <div class="rweaknesses">${weaknessesHtml}</div>
+        </div>` : ''}
 
         ${appearancesHtml ? `
         <div>
-          <div class="section-label">🎬 Famous Appearances</div>
-          <div class="appearances-list">${appearancesHtml}</div>
-        </div>
-        ` : ''}
+          <div class="rsection">🎬 Famous Appearances</div>
+          <div class="rappearances">${appearancesHtml}</div>
+        </div>` : ''}
 
         ${m.funFact ? `
-        <div class="fun-fact-box">
-          <span class="fun-fact-label">💀 Did you know?</span>
+        <div class="rfunfact">
+          <strong>💀 Did you know?</strong>
           ${escapeHtml(m.funFact)}
-        </div>
-        ` : ''}
+        </div>` : ''}
       </div>
     </div>
+
+    <button class="back-btn" onclick="goBack()">← BACK TO FIELD GUIDE</button>
   `;
 }
-
-// Fallback for broken images — called via onerror
-function renderPlaceholder(emoji) {
-  return `<div class="card-img-placeholder"><span>${emoji}</span><div class="img-overlay"></div></div>`;
-}
-// Make available globally for onerror inline handler
-window.renderPlaceholder = renderPlaceholder;
 
 // ============================
 //   Utilities
@@ -525,20 +490,14 @@ const HISTORY_KEY = 'monsterdex_history';
 const MAX_HISTORY = 30;
 
 function getHistory() {
-  try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
-  } catch {
-    return [];
-  }
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+  catch { return []; }
 }
 
 function saveToHistory(monster) {
   const history = getHistory();
-
-  // Remove duplicate if exists
   const filtered = history.filter(m => m.name.toLowerCase() !== monster.name.toLowerCase());
 
-  // Add to front
   filtered.unshift({
     name: monster.name,
     emoji: monster.emoji || '👹',
@@ -548,9 +507,7 @@ function saveToHistory(monster) {
     timestamp: Date.now()
   });
 
-  // Cap at MAX_HISTORY
-  const trimmed = filtered.slice(0, MAX_HISTORY);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(filtered.slice(0, MAX_HISTORY)));
 }
 
 function clearHistory() {
@@ -571,25 +528,31 @@ function renderPastSearches() {
   pastSearchesList.innerHTML = history.map(m => {
     const skulls = '💀'.repeat(Math.min(Math.max(m.dangerLevel || 3, 1), 5));
     return `
-      <div class="past-search-item" data-monster="${escapeAttr(m.name)}" role="button" tabindex="0">
-        <span class="past-search-emoji">${m.emoji || '👹'}</span>
-        <div class="past-search-info">
-          <div class="past-search-name">${escapeHtml(m.name)}</div>
-          <div class="past-search-origin">${escapeHtml(m.origin)}</div>
+      <div class="card" data-monster="${escapeAttr(m.name)}" role="button" tabindex="0">
+        <div class="card-top">
+          <span class="card-emoji">${m.emoji || '👹'}</span>
+          <div class="card-badges">
+            <span class="badge badge-type">${escapeHtml(m.type)}</span>
+          </div>
         </div>
-        <span class="past-search-danger">${skulls}</span>
-      </div>
-    `;
+        <div class="card-name">${escapeHtml(m.name)}</div>
+        <div class="card-origin">${escapeHtml(m.origin)}</div>
+        <div class="card-divider"></div>
+        <div class="card-danger-row">
+          <span class="danger-label">Danger:</span>
+          <span class="skulls">${skulls}</span>
+        </div>
+      </div>`;
   }).join('');
 
-  // Click handlers for past search items
-  pastSearchesList.querySelectorAll('.past-search-item').forEach(item => {
+  // Click handlers
+  pastSearchesList.querySelectorAll('.card').forEach(card => {
     const handler = () => {
-      searchInput.value = item.dataset.monster;
+      searchInput.value = card.dataset.monster;
       searchForm.dispatchEvent(new Event('submit'));
     };
-    item.addEventListener('click', handler);
-    item.addEventListener('keydown', e => {
+    card.addEventListener('click', handler);
+    card.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); }
     });
   });
