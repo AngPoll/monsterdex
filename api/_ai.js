@@ -114,7 +114,7 @@ async function generateProfile(monsterName) {
   }
 
   console.error('All profile providers failed:', errors.join(' | '));
-  throw new Error('Sorry monster unavailable, try again soon.');
+  throw new Error(errors.length ? errors.join(' | ') : 'Sorry monster unavailable, try again soon.');
 }
 
 async function identifyFromImage(base64Data, mimeType) {
