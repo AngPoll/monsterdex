@@ -9,22 +9,40 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background: radial-gradient(circle at top, #222 0%, #0b0b0b 55%, #000 100%);
+  background:
+    radial-gradient(circle at 10% 10%, rgba(0, 255, 136, 0.16), transparent 35%),
+    radial-gradient(circle at 90% 20%, rgba(0, 194, 255, 0.14), transparent 30%),
+    linear-gradient(165deg, #021209 0%, #05090d 45%, #000 100%);
   color: #b8ffcb;
   font-family: 'Rubik', sans-serif;
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: 22px;
 }
 
 .panel {
-  width: min(720px, 100%);
+  width: min(860px, 100%);
   border: 2px solid #1eff78;
-  background: rgba(8, 18, 11, 0.88);
-  box-shadow: 0 0 20px rgba(30, 255, 120, 0.25), inset 0 0 24px rgba(30, 255, 120, 0.08);
-  border-radius: 10px;
-  padding: 26px;
+  background: rgba(6, 16, 11, 0.92);
+  box-shadow: 0 0 24px rgba(30, 255, 120, 0.22), inset 0 0 28px rgba(30, 255, 120, 0.07);
+  border-radius: 12px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(180, 255, 215, 0.035) 0,
+    rgba(180, 255, 215, 0.035) 1px,
+    transparent 1px,
+    transparent 4px
+  );
 }
 
 .kicker {
@@ -32,39 +50,155 @@ body {
   letter-spacing: 2px;
   text-transform: uppercase;
   color: #66ff9f;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 h1 {
   font-family: 'Bangers', cursive;
-  font-size: clamp(40px, 8vw, 62px);
+  font-size: clamp(38px, 7vw, 58px);
   letter-spacing: 3px;
   color: #d6ffe3;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  text-shadow: 0 0 12px rgba(30, 255, 120, 0.25);
 }
 
 .lead {
   color: #a1f7bf;
-  line-height: 1.6;
-  margin-bottom: 20px;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.hud {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.hud-card {
+  border: 1px solid #2de781;
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(2, 16, 9, 0.65);
+}
+
+.hud-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #75d39d;
+  margin-bottom: 4px;
+}
+
+.hud-value {
+  font-family: 'Boogaloo', cursive;
+  font-size: 22px;
+  line-height: 1;
+  color: #d8ffe8;
 }
 
 .terminal {
   border: 1px solid #2de781;
-  background: #031209;
+  background: #020c07;
   border-radius: 8px;
-  padding: 14px;
+  padding: 14px 14px 10px;
   font-family: 'Consolas', 'Courier New', monospace;
   color: #78ffb0;
-  line-height: 1.8;
+  line-height: 1.6;
+  min-height: 300px;
+  max-height: 380px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.terminal-line {
+  margin-bottom: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.command-input {
+  flex: 1;
+  background: #031209;
+  color: #d6ffe3;
+  border: 1px solid #2de781;
+  border-radius: 6px;
+  padding: 11px 12px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 14px;
+  outline: none;
+}
+
+.command-input:focus {
+  box-shadow: 0 0 0 2px rgba(45, 231, 129, 0.22);
+}
+
+.run-btn,
+.aux-btn {
+  border: 1px solid #2de781;
+  background: #07331f;
+  color: #d6ffe3;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: 'Rubik', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.run-btn:hover,
+.aux-btn:hover {
+  background: #0a4a2c;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 9px;
 }
 
 .prompt { color: #d6ffe3; }
 .muted { color: #70c091; }
+.warn { color: #ffe08a; }
+.danger { color: #ff9a9a; }
+.success { color: #7dffbf; }
+
+.status {
+  margin-top: 14px;
+  border: 1px dashed #2de781;
+  border-radius: 8px;
+  padding: 10px;
+  color: #a8f0c5;
+  background: rgba(3, 18, 10, 0.5);
+  font-size: 14px;
+}
+
+.list {
+  margin-top: 6px;
+  margin-left: 16px;
+}
+
+.glitch {
+  animation: flicker 1.7s infinite alternate;
+}
+
+@keyframes flicker {
+  0% { opacity: 1; }
+  25% { opacity: 0.9; }
+  50% { opacity: 1; }
+  100% { opacity: 0.94; }
+}
 
 .back-link {
   display: inline-block;
-  margin-top: 16px;
+  margin-top: 14px;
   color: #d6ffe3;
   text-decoration: none;
   border-bottom: 1px dashed #66ff9f;
@@ -74,22 +208,388 @@ h1 {
   color: #fff;
   border-bottom-color: #fff;
 }
+
+@media (max-width: 760px) {
+  .panel { padding: 16px; }
+  .hud { grid-template-columns: 1fr 1fr; }
+  .terminal { min-height: 270px; max-height: 340px; }
+  .input-row { flex-direction: column; }
+  .run-btn { width: 100%; }
+}
 </style>
 </head>
 <body>
   <main class="panel">
+    <div class="scanlines"></div>
     <div class="kicker">MonsterDex Side Quest</div>
-    <h1>Hacker Mode</h1>
-    <p class="lead">Welcome to the hacker section. The game console is being forged. Next step: we can build a mini challenge game here with terminals, clues, and timed hacks.</p>
+    <h1 class="glitch">Hacker Mode</h1>
+    <p class="lead">Break into the Abyssal Vault in three stages before integrity reaches zero. Use terminal commands to decode, analyze, and unlock the final key.</p>
 
-    <div class="terminal">
-      <div><span class="prompt">root@monsterdex</span>:~$ initialize_hacker_mode</div>
-      <div class="muted">[OK] Secure tunnel established</div>
-      <div class="muted">[OK] Cryptid signatures loaded</div>
-      <div class="muted">[WAIT] Game modules pending deployment...</div>
+    <section class="hud" aria-label="Game status">
+      <div class="hud-card">
+        <div class="hud-label">Stage</div>
+        <div class="hud-value" id="stage">1 / 3</div>
+      </div>
+      <div class="hud-card">
+        <div class="hud-label">Integrity</div>
+        <div class="hud-value" id="integrity">100%</div>
+      </div>
+      <div class="hud-card">
+        <div class="hud-label">Time</div>
+        <div class="hud-value" id="time">180s</div>
+      </div>
+      <div class="hud-card">
+        <div class="hud-label">Score</div>
+        <div class="hud-value" id="score">0</div>
+      </div>
+    </section>
+
+    <div class="terminal" id="terminal" aria-live="polite"></div>
+
+    <form class="input-row" id="command-form">
+      <input
+        class="command-input"
+        id="command-input"
+        type="text"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="Type command... (try: help)"
+      >
+      <button class="run-btn" type="submit">Run</button>
+    </form>
+
+    <div class="actions">
+      <button class="aux-btn" id="hint-btn" type="button">Hint</button>
+      <button class="aux-btn" id="restart-btn" type="button">Restart</button>
+      <button class="aux-btn" id="clear-btn" type="button">Clear Log</button>
+    </div>
+
+    <div class="status" id="status-box">
+      Mission briefing:
+      <ul class="list">
+        <li>Stage 1: decode a Caesar cipher token.</li>
+        <li>Stage 2: analyze binary traffic.</li>
+        <li>Stage 3: unlock vault keyphrase.</li>
+      </ul>
     </div>
 
     <a class="back-link" href="index.html">← Back to MonsterDex</a>
   </main>
+
+<script>
+const terminalEl = document.getElementById('terminal');
+const formEl = document.getElementById('command-form');
+const inputEl = document.getElementById('command-input');
+const stageEl = document.getElementById('stage');
+const integrityEl = document.getElementById('integrity');
+const timeEl = document.getElementById('time');
+const scoreEl = document.getElementById('score');
+const statusBoxEl = document.getElementById('status-box');
+const hintBtn = document.getElementById('hint-btn');
+const restartBtn = document.getElementById('restart-btn');
+const clearBtn = document.getElementById('clear-btn');
+
+const MAX_TIME = 180;
+let timerId = null;
+let timeLeft = MAX_TIME;
+let integrity = 100;
+let stage = 1;
+let attempts = 0;
+let solved = false;
+
+const gameState = {
+  stage1Solved: false,
+  stage2Solved: false,
+  stage3Solved: false,
+  decodedWord: '',
+  binaryWord: ''
+};
+
+const stageData = {
+  1: {
+    prompt: 'STAGE 1: Decode token NUDNHQ with a Caesar shift of 3. Command: decode <token> <shift>'
+  },
+  2: {
+    prompt: 'STAGE 2: Analyze binary stream 01000111 01001111 01001100 01000100. Command: analyze <binary>'
+  },
+  3: {
+    prompt: 'STAGE 3: Build vault key using Stage1 + "-" + Stage2. Command: unlock <keyphrase>'
+  }
+};
+
+function addLine(text, cls = '') {
+  const line = document.createElement('div');
+  line.className = `terminal-line ${cls}`.trim();
+  line.textContent = text;
+  terminalEl.appendChild(line);
+  terminalEl.scrollTop = terminalEl.scrollHeight;
+}
+
+function updateHud() {
+  stageEl.textContent = `${stage} / 3`;
+  integrityEl.textContent = `${Math.max(0, integrity)}%`;
+  timeEl.textContent = `${Math.max(0, timeLeft)}s`;
+  const base = (gameState.stage1Solved ? 200 : 0) + (gameState.stage2Solved ? 300 : 0) + (gameState.stage3Solved ? 500 : 0);
+  const bonus = Math.max(0, timeLeft * 2) + Math.max(0, integrity);
+  scoreEl.textContent = solved ? String(base + bonus) : String(base);
+}
+
+function updateStatus() {
+  if (solved) {
+    statusBoxEl.innerHTML = 'Vault breached successfully. You extracted the Abyssal Archive without triggering monster countermeasures.';
+    return;
+  }
+
+  if (integrity <= 0 || timeLeft <= 0) {
+    statusBoxEl.innerHTML = 'Access denied. Integrity collapsed. Hit Restart and try another infiltration route.';
+    return;
+  }
+
+  statusBoxEl.textContent = stageData[stage].prompt;
+}
+
+function startTimer() {
+  clearInterval(timerId);
+  timerId = setInterval(() => {
+    if (solved) {
+      clearInterval(timerId);
+      return;
+    }
+    timeLeft -= 1;
+    if (timeLeft % 8 === 0) integrity -= 2;
+    if (timeLeft <= 0 || integrity <= 0) {
+      timeLeft = Math.max(0, timeLeft);
+      integrity = Math.max(0, integrity);
+      updateHud();
+      updateStatus();
+      addLine('[ALERT] Session terminated. Type restart to try again.', 'danger');
+      clearInterval(timerId);
+      return;
+    }
+    updateHud();
+  }, 1000);
+}
+
+function caesarDecode(text, shift) {
+  return text
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '')
+    .split('')
+    .map(ch => {
+      const code = ch.charCodeAt(0) - 65;
+      const decoded = (code - shift + 26) % 26;
+      return String.fromCharCode(decoded + 65);
+    })
+    .join('');
+}
+
+function binaryToText(binaryText) {
+  const groups = binaryText.trim().split(/\s+/);
+  if (!groups.length) return '';
+
+  let out = '';
+  for (const part of groups) {
+    if (!/^[01]{8}$/.test(part)) return '';
+    out += String.fromCharCode(parseInt(part, 2));
+  }
+  return out.toUpperCase();
+}
+
+function penalize() {
+  attempts += 1;
+  integrity -= 8;
+  if (integrity < 0) integrity = 0;
+  addLine('[SECURITY] Invalid operation. Integrity -8%', 'warn');
+  if (integrity <= 0) {
+    addLine('[LOCKOUT] Integrity reached zero. restart required.', 'danger');
+    clearInterval(timerId);
+  }
+}
+
+function completeStage() {
+  if (stage < 3) {
+    stage += 1;
+    addLine(`[SUCCESS] Stage ${stage - 1} complete.`, 'success');
+  } else {
+    solved = true;
+    addLine('[SYSTEM] Vault unlocked. Data siphon complete.', 'success');
+    clearInterval(timerId);
+  }
+  updateHud();
+  updateStatus();
+}
+
+function showHelp() {
+  addLine('Available commands:', 'muted');
+  addLine('  help', 'muted');
+  addLine('  clear', 'muted');
+  addLine('  restart', 'muted');
+  addLine('  hint', 'muted');
+  addLine('  decode <token> <shift>', 'muted');
+  addLine('  analyze <binary>', 'muted');
+  addLine('  unlock <keyphrase>', 'muted');
+}
+
+function showHint() {
+  if (stage === 1) {
+    addLine('[HINT] Shift letters backward by 3. N->K, U->R ...', 'warn');
+  } else if (stage === 2) {
+    addLine('[HINT] Each 8 bits is one ASCII letter.', 'warn');
+  } else {
+    addLine('[HINT] Combine your two recovered words with a hyphen.', 'warn');
+  }
+}
+
+function resetGame() {
+  clearInterval(timerId);
+  timeLeft = MAX_TIME;
+  integrity = 100;
+  stage = 1;
+  attempts = 0;
+  solved = false;
+  gameState.stage1Solved = false;
+  gameState.stage2Solved = false;
+  gameState.stage3Solved = false;
+  gameState.decodedWord = '';
+  gameState.binaryWord = '';
+
+  terminalEl.innerHTML = '';
+  addLine('root@monsterdex:~$ initialize_hacker_mode', 'prompt');
+  addLine('[OK] Tunnel open. Countermeasures active.', 'muted');
+  addLine(stageData[1].prompt, 'muted');
+
+  updateHud();
+  updateStatus();
+  startTimer();
+}
+
+function handleCommand(rawInput) {
+  const trimmed = rawInput.trim();
+  if (!trimmed) return;
+
+  addLine(`root@monsterdex:~$ ${trimmed}`, 'prompt');
+
+  const parts = trimmed.split(/\s+/);
+  const command = parts[0].toLowerCase();
+
+  if (command === 'help') {
+    showHelp();
+    return;
+  }
+
+  if (command === 'clear') {
+    terminalEl.innerHTML = '';
+    addLine('[LOG] Terminal cleared.', 'muted');
+    return;
+  }
+
+  if (command === 'restart') {
+    addLine('[SYSTEM] Restarting infiltration...', 'muted');
+    resetGame();
+    return;
+  }
+
+  if (command === 'hint') {
+    showHint();
+    return;
+  }
+
+  if (solved) {
+    addLine('[INFO] Mission already complete. Type restart for a new run.', 'muted');
+    return;
+  }
+
+  if (integrity <= 0 || timeLeft <= 0) {
+    addLine('[LOCKED] Session ended. Type restart.', 'danger');
+    return;
+  }
+
+  if (stage === 1 && command === 'decode') {
+    if (parts.length < 3) {
+      addLine('[ERROR] Usage: decode <token> <shift>', 'danger');
+      return;
+    }
+    const token = parts[1];
+    const shift = Number(parts[2]);
+    if (!Number.isInteger(shift)) {
+      addLine('[ERROR] Shift must be an integer.', 'danger');
+      return;
+    }
+    const decoded = caesarDecode(token, shift);
+    addLine(`[OUTPUT] ${decoded}`, 'muted');
+    if (decoded === 'KRAKEN') {
+      gameState.stage1Solved = true;
+      gameState.decodedWord = decoded;
+      completeStage();
+    } else {
+      penalize();
+    }
+    return;
+  }
+
+  if (stage === 2 && command === 'analyze') {
+    const binaryInput = trimmed.slice('analyze'.length).trim();
+    if (!binaryInput) {
+      addLine('[ERROR] Usage: analyze <8-bit binary groups>', 'danger');
+      return;
+    }
+    const text = binaryToText(binaryInput);
+    if (!text) {
+      addLine('[ERROR] Invalid binary format.', 'danger');
+      penalize();
+      return;
+    }
+    addLine(`[OUTPUT] ${text}`, 'muted');
+    if (text === 'GOLD') {
+      gameState.stage2Solved = true;
+      gameState.binaryWord = text;
+      completeStage();
+    } else {
+      penalize();
+    }
+    return;
+  }
+
+  if (stage === 3 && command === 'unlock') {
+    const phrase = trimmed.slice('unlock'.length).trim().toUpperCase();
+    const expected = `${gameState.decodedWord}-${gameState.binaryWord}`;
+    if (!phrase) {
+      addLine('[ERROR] Usage: unlock <keyphrase>', 'danger');
+      return;
+    }
+    if (phrase === expected) {
+      gameState.stage3Solved = true;
+      completeStage();
+    } else {
+      penalize();
+    }
+    return;
+  }
+
+  addLine('[ERROR] Command not valid for this stage. Use help.', 'danger');
+  penalize();
+}
+
+formEl.addEventListener('submit', e => {
+  e.preventDefault();
+  handleCommand(inputEl.value);
+  inputEl.value = '';
+  inputEl.focus();
+});
+
+hintBtn.addEventListener('click', showHint);
+restartBtn.addEventListener('click', () => {
+  addLine('root@monsterdex:~$ restart', 'prompt');
+  addLine('[SYSTEM] Restarting infiltration...', 'muted');
+  resetGame();
+});
+clearBtn.addEventListener('click', () => {
+  addLine('root@monsterdex:~$ clear', 'prompt');
+  terminalEl.innerHTML = '';
+  addLine('[LOG] Terminal cleared.', 'muted');
+});
+
+resetGame();
+</script>
 </body>
 </html>
