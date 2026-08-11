@@ -10,24 +10,24 @@
 
 body {
   background:
-    radial-gradient(circle at 10% 10%, rgba(0, 255, 136, 0.16), transparent 35%),
-    radial-gradient(circle at 90% 20%, rgba(0, 194, 255, 0.14), transparent 30%),
-    linear-gradient(165deg, #021209 0%, #05090d 45%, #000 100%);
-  color: #b8ffcb;
+    radial-gradient(circle at 12% 12%, rgba(88, 216, 255, 0.24), transparent 30%),
+    radial-gradient(circle at 84% 20%, rgba(255, 201, 87, 0.22), transparent 34%),
+    linear-gradient(150deg, #07213a 0%, #0d1f29 50%, #111c2a 100%);
+  color: #dbf7ff;
   font-family: 'Rubik', sans-serif;
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 22px;
+  padding: 20px;
 }
 
 .panel {
-  width: min(860px, 100%);
-  border: 2px solid #1eff78;
-  background: rgba(6, 16, 11, 0.92);
-  box-shadow: 0 0 24px rgba(30, 255, 120, 0.22), inset 0 0 28px rgba(30, 255, 120, 0.07);
+  width: min(880px, 100%);
+  border: 2px solid #66dcff;
+  background: rgba(8, 28, 44, 0.9);
+  box-shadow: 0 0 24px rgba(102, 220, 255, 0.2), inset 0 0 30px rgba(102, 220, 255, 0.06);
   border-radius: 12px;
-  padding: 24px;
+  padding: 22px;
   position: relative;
   overflow: hidden;
 }
@@ -38,8 +38,8 @@ body {
   pointer-events: none;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(180, 255, 215, 0.035) 0,
-    rgba(180, 255, 215, 0.035) 1px,
+    rgba(188, 240, 255, 0.03) 0,
+    rgba(188, 240, 255, 0.03) 1px,
     transparent 1px,
     transparent 4px
   );
@@ -49,44 +49,44 @@ body {
   font-family: 'Boogaloo', cursive;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: #66ff9f;
+  color: #88e4ff;
   margin-bottom: 8px;
 }
 
 h1 {
   font-family: 'Bangers', cursive;
-  font-size: clamp(38px, 7vw, 58px);
+  font-size: clamp(36px, 7vw, 56px);
   letter-spacing: 3px;
-  color: #d6ffe3;
+  color: #f0fbff;
   margin-bottom: 8px;
-  text-shadow: 0 0 12px rgba(30, 255, 120, 0.25);
+  text-shadow: 0 0 12px rgba(102, 220, 255, 0.25);
 }
 
 .lead {
-  color: #a1f7bf;
+  color: #c8efff;
   line-height: 1.5;
   margin-bottom: 14px;
 }
 
 .hud {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 12px;
 }
 
 .hud-card {
-  border: 1px solid #2de781;
+  border: 1px solid #66dcff;
   border-radius: 8px;
   padding: 10px;
-  background: rgba(2, 16, 9, 0.65);
+  background: rgba(8, 42, 65, 0.58);
 }
 
 .hud-label {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: #75d39d;
+  color: #9edfff;
   margin-bottom: 4px;
 }
 
@@ -94,19 +94,19 @@ h1 {
   font-family: 'Boogaloo', cursive;
   font-size: 22px;
   line-height: 1;
-  color: #d8ffe8;
+  color: #f0fbff;
 }
 
 .terminal {
-  border: 1px solid #2de781;
-  background: #020c07;
+  border: 1px solid #66dcff;
+  background: #061826;
   border-radius: 8px;
   padding: 14px 14px 10px;
   font-family: 'Consolas', 'Courier New', monospace;
-  color: #78ffb0;
+  color: #c9f2ff;
   line-height: 1.6;
-  min-height: 300px;
-  max-height: 380px;
+  min-height: 250px;
+  max-height: 320px;
   overflow-y: auto;
   margin-bottom: 10px;
 }
@@ -124,9 +124,9 @@ h1 {
 
 .command-input {
   flex: 1;
-  background: #031209;
-  color: #d6ffe3;
-  border: 1px solid #2de781;
+  background: #081b2b;
+  color: #f0fbff;
+  border: 1px solid #66dcff;
   border-radius: 6px;
   padding: 11px 12px;
   font-family: 'Consolas', 'Courier New', monospace;
@@ -135,14 +135,14 @@ h1 {
 }
 
 .command-input:focus {
-  box-shadow: 0 0 0 2px rgba(45, 231, 129, 0.22);
+  box-shadow: 0 0 0 2px rgba(102, 220, 255, 0.25);
 }
 
 .run-btn,
 .aux-btn {
-  border: 1px solid #2de781;
-  background: #07331f;
-  color: #d6ffe3;
+  border: 1px solid #66dcff;
+  background: #114062;
+  color: #f0fbff;
   border-radius: 6px;
   padding: 10px 12px;
   font-family: 'Rubik', sans-serif;
@@ -155,7 +155,7 @@ h1 {
 
 .run-btn:hover,
 .aux-btn:hover {
-  background: #0a4a2c;
+  background: #17608f;
 }
 
 .actions {
@@ -164,25 +164,20 @@ h1 {
   margin-top: 9px;
 }
 
-.prompt { color: #d6ffe3; }
-.muted { color: #70c091; }
+.prompt { color: #e9f8ff; }
+.muted { color: #a8ddf4; }
 .warn { color: #ffe08a; }
-.danger { color: #ff9a9a; }
-.success { color: #7dffbf; }
+.danger { color: #ffb6b6; }
+.success { color: #9cffcf; }
 
 .status {
   margin-top: 14px;
-  border: 1px dashed #2de781;
+  border: 1px dashed #66dcff;
   border-radius: 8px;
   padding: 10px;
-  color: #a8f0c5;
-  background: rgba(3, 18, 10, 0.5);
+  color: #def4ff;
+  background: rgba(8, 42, 65, 0.42);
   font-size: 14px;
-}
-
-.list {
-  margin-top: 6px;
-  margin-left: 16px;
 }
 
 .glitch {
@@ -199,9 +194,9 @@ h1 {
 .back-link {
   display: inline-block;
   margin-top: 14px;
-  color: #d6ffe3;
+  color: #e9f8ff;
   text-decoration: none;
-  border-bottom: 1px dashed #66ff9f;
+  border-bottom: 1px dashed #88e4ff;
 }
 
 .back-link:hover {
@@ -211,8 +206,8 @@ h1 {
 
 @media (max-width: 760px) {
   .panel { padding: 16px; }
-  .hud { grid-template-columns: 1fr 1fr; }
-  .terminal { min-height: 270px; max-height: 340px; }
+  .hud { grid-template-columns: 1fr; }
+  .terminal { min-height: 220px; max-height: 300px; }
   .input-row { flex-direction: column; }
   .run-btn { width: 100%; }
 }
@@ -221,26 +216,22 @@ h1 {
 <body>
   <main class="panel">
     <div class="scanlines"></div>
-    <div class="kicker">MonsterDex Side Quest</div>
-    <h1 class="glitch">Hacker Mode</h1>
-    <p class="lead">Break into the Abyssal Vault in three stages before integrity reaches zero. Use terminal commands to decode, analyze, and unlock the final key.</p>
+    <div class="kicker">MonsterDex Kids Quest</div>
+    <h1 class="glitch">Hacker Mode Junior</h1>
+    <p class="lead">Welcome, Code Ranger. Solve three fun puzzles to help the baby dragon open the treasure gate. Type your answer with <strong>code</strong> or just type the answer word/number.</p>
 
     <section class="hud" aria-label="Game status">
       <div class="hud-card">
-        <div class="hud-label">Stage</div>
+        <div class="hud-label">Level</div>
         <div class="hud-value" id="stage">1 / 3</div>
       </div>
       <div class="hud-card">
-        <div class="hud-label">Integrity</div>
-        <div class="hud-value" id="integrity">100%</div>
+        <div class="hud-label">Stars</div>
+        <div class="hud-value" id="stars">5</div>
       </div>
       <div class="hud-card">
         <div class="hud-label">Time</div>
-        <div class="hud-value" id="time">180s</div>
-      </div>
-      <div class="hud-card">
-        <div class="hud-label">Score</div>
-        <div class="hud-value" id="score">0</div>
+        <div class="hud-value" id="time">240s</div>
       </div>
     </section>
 
@@ -253,7 +244,7 @@ h1 {
         type="text"
         autocomplete="off"
         spellcheck="false"
-        placeholder="Type command... (try: help)"
+        placeholder="Type answer... try help"
       >
       <button class="run-btn" type="submit">Run</button>
     </form>
@@ -265,15 +256,10 @@ h1 {
     </div>
 
     <div class="status" id="status-box">
-      Mission briefing:
-      <ul class="list">
-        <li>Stage 1: decode a Caesar cipher token.</li>
-        <li>Stage 2: analyze binary traffic.</li>
-        <li>Stage 3: unlock vault keyphrase.</li>
-      </ul>
+      Get ready for Level 1.
     </div>
 
-    <a class="back-link" href="index.html">← Back to MonsterDex</a>
+    <a class="back-link" href="index.html">← Back to Home</a>
   </main>
 
 <script>
@@ -281,41 +267,40 @@ const terminalEl = document.getElementById('terminal');
 const formEl = document.getElementById('command-form');
 const inputEl = document.getElementById('command-input');
 const stageEl = document.getElementById('stage');
-const integrityEl = document.getElementById('integrity');
+const starsEl = document.getElementById('stars');
 const timeEl = document.getElementById('time');
-const scoreEl = document.getElementById('score');
 const statusBoxEl = document.getElementById('status-box');
 const hintBtn = document.getElementById('hint-btn');
 const restartBtn = document.getElementById('restart-btn');
 const clearBtn = document.getElementById('clear-btn');
 
-const MAX_TIME = 180;
+const MAX_TIME = 240;
 let timerId = null;
 let timeLeft = MAX_TIME;
-let integrity = 100;
+let stars = 5;
 let stage = 1;
-let attempts = 0;
 let solved = false;
 
-const gameState = {
-  stage1Solved: false,
-  stage2Solved: false,
-  stage3Solved: false,
-  decodedWord: '',
-  binaryWord: ''
-};
-
-const stageData = {
-  1: {
-    prompt: 'STAGE 1: Decode token NUDNHQ with a Caesar shift of 3. Command: decode <token> <shift>'
+const stages = [
+  {
+    title: 'Level 1',
+    question: 'I am a monster that flies and breathes fire. What am I?',
+    answers: ['DRAGON'],
+    hint: 'It has wings and appears in many fairy tales.'
   },
-  2: {
-    prompt: 'STAGE 2: Analyze binary stream 01000111 01001111 01001100 01000100. Command: analyze <binary>'
+  {
+    title: 'Level 2',
+    question: 'Math code: 6 + 7 = ?',
+    answers: ['13', 'THIRTEEN'],
+    hint: 'Count up from 6 by 7 more steps.'
   },
-  3: {
-    prompt: 'STAGE 3: Build vault key using Stage1 + "-" + Stage2. Command: unlock <keyphrase>'
+  {
+    title: 'Level 3',
+    question: 'Pattern code: 2, 4, 6, ? ',
+    answers: ['8', 'EIGHT'],
+    hint: 'The numbers go up by 2 each time.'
   }
-};
+];
 
 function addLine(text, cls = '') {
   const line = document.createElement('div');
@@ -327,25 +312,22 @@ function addLine(text, cls = '') {
 
 function updateHud() {
   stageEl.textContent = `${stage} / 3`;
-  integrityEl.textContent = `${Math.max(0, integrity)}%`;
+  starsEl.textContent = `${Math.max(0, stars)}`;
   timeEl.textContent = `${Math.max(0, timeLeft)}s`;
-  const base = (gameState.stage1Solved ? 200 : 0) + (gameState.stage2Solved ? 300 : 0) + (gameState.stage3Solved ? 500 : 0);
-  const bonus = Math.max(0, timeLeft * 2) + Math.max(0, integrity);
-  scoreEl.textContent = solved ? String(base + bonus) : String(base);
 }
 
 function updateStatus() {
   if (solved) {
-    statusBoxEl.innerHTML = 'Vault breached successfully. You extracted the Abyssal Archive without triggering monster countermeasures.';
+    statusBoxEl.textContent = 'You did it. The treasure gate is open and the baby dragon is safe.';
     return;
   }
 
-  if (integrity <= 0 || timeLeft <= 0) {
-    statusBoxEl.innerHTML = 'Access denied. Integrity collapsed. Hit Restart and try another infiltration route.';
+  if (stars <= 0 || timeLeft <= 0) {
+    statusBoxEl.textContent = 'Game over for now. Press Restart and try again.';
     return;
   }
 
-  statusBoxEl.textContent = stageData[stage].prompt;
+  statusBoxEl.textContent = `${stages[stage - 1].title}: ${stages[stage - 1].question}`;
 }
 
 function startTimer() {
@@ -356,13 +338,12 @@ function startTimer() {
       return;
     }
     timeLeft -= 1;
-    if (timeLeft % 8 === 0) integrity -= 2;
-    if (timeLeft <= 0 || integrity <= 0) {
+    if (timeLeft <= 0 || stars <= 0) {
       timeLeft = Math.max(0, timeLeft);
-      integrity = Math.max(0, integrity);
+      stars = Math.max(0, stars);
       updateHud();
       updateStatus();
-      addLine('[ALERT] Session terminated. Type restart to try again.', 'danger');
+      addLine('[TIME] Time is up. Type restart to play again.', 'danger');
       clearInterval(timerId);
       return;
     }
@@ -370,38 +351,27 @@ function startTimer() {
   }, 1000);
 }
 
-function caesarDecode(text, shift) {
-  return text
-    .toUpperCase()
-    .replace(/[^A-Z]/g, '')
-    .split('')
-    .map(ch => {
-      const code = ch.charCodeAt(0) - 65;
-      const decoded = (code - shift + 26) % 26;
-      return String.fromCharCode(decoded + 65);
-    })
-    .join('');
+function normalizeAnswer(text) {
+  return text.trim().toUpperCase();
 }
 
-function binaryToText(binaryText) {
-  const groups = binaryText.trim().split(/\s+/);
-  if (!groups.length) return '';
-
-  let out = '';
-  for (const part of groups) {
-    if (!/^[01]{8}$/.test(part)) return '';
-    out += String.fromCharCode(parseInt(part, 2));
+function extractAnswer(trimmedInput) {
+  const text = normalizeAnswer(trimmedInput);
+  if (text.startsWith('CODE ')) {
+    return text.slice(5).trim();
   }
-  return out.toUpperCase();
+  if (text.startsWith('ANSWER ')) {
+    return text.slice(7).trim();
+  }
+  return text;
 }
 
 function penalize() {
-  attempts += 1;
-  integrity -= 8;
-  if (integrity < 0) integrity = 0;
-  addLine('[SECURITY] Invalid operation. Integrity -8%', 'warn');
-  if (integrity <= 0) {
-    addLine('[LOCKOUT] Integrity reached zero. restart required.', 'danger');
+  stars -= 1;
+  if (stars < 0) stars = 0;
+  addLine('[TRY AGAIN] Not quite. You lose 1 star.', 'warn');
+  if (stars <= 0) {
+    addLine('[GAME] No stars left. Type restart.', 'danger');
     clearInterval(timerId);
   }
 }
@@ -409,10 +379,11 @@ function penalize() {
 function completeStage() {
   if (stage < 3) {
     stage += 1;
-    addLine(`[SUCCESS] Stage ${stage - 1} complete.`, 'success');
+    addLine(`[SUCCESS] Great job! Level ${stage - 1} complete.`, 'success');
+    addLine(`${stages[stage - 1].title}: ${stages[stage - 1].question}`, 'muted');
   } else {
     solved = true;
-    addLine('[SYSTEM] Vault unlocked. Data siphon complete.', 'success');
+    addLine('[WINNER] You solved all levels and unlocked the gate.', 'success');
     clearInterval(timerId);
   }
   updateHud();
@@ -420,43 +391,32 @@ function completeStage() {
 }
 
 function showHelp() {
-  addLine('Available commands:', 'muted');
+  addLine('Commands you can use:', 'muted');
   addLine('  help', 'muted');
-  addLine('  clear', 'muted');
-  addLine('  restart', 'muted');
   addLine('  hint', 'muted');
-  addLine('  decode <token> <shift>', 'muted');
-  addLine('  analyze <binary>', 'muted');
-  addLine('  unlock <keyphrase>', 'muted');
+  addLine('  restart', 'muted');
+  addLine('  clear', 'muted');
+  addLine('Answer format:', 'muted');
+  addLine('  code dragon', 'muted');
+  addLine('or just type:', 'muted');
+  addLine('  dragon', 'muted');
 }
 
 function showHint() {
-  if (stage === 1) {
-    addLine('[HINT] Shift letters backward by 3. N->K, U->R ...', 'warn');
-  } else if (stage === 2) {
-    addLine('[HINT] Each 8 bits is one ASCII letter.', 'warn');
-  } else {
-    addLine('[HINT] Combine your two recovered words with a hyphen.', 'warn');
-  }
+  addLine(`[HINT] ${stages[stage - 1].hint}`, 'warn');
 }
 
 function resetGame() {
   clearInterval(timerId);
   timeLeft = MAX_TIME;
-  integrity = 100;
+  stars = 5;
   stage = 1;
-  attempts = 0;
   solved = false;
-  gameState.stage1Solved = false;
-  gameState.stage2Solved = false;
-  gameState.stage3Solved = false;
-  gameState.decodedWord = '';
-  gameState.binaryWord = '';
 
   terminalEl.innerHTML = '';
-  addLine('root@monsterdex:~$ initialize_hacker_mode', 'prompt');
-  addLine('[OK] Tunnel open. Countermeasures active.', 'muted');
-  addLine(stageData[1].prompt, 'muted');
+  addLine('kidcoder@monsterdex:~$ start_quest', 'prompt');
+  addLine('[OK] Quest loaded. Solve 3 levels to win.', 'muted');
+  addLine(`${stages[0].title}: ${stages[0].question}`, 'muted');
 
   updateHud();
   updateStatus();
@@ -467,7 +427,7 @@ function handleCommand(rawInput) {
   const trimmed = rawInput.trim();
   if (!trimmed) return;
 
-  addLine(`root@monsterdex:~$ ${trimmed}`, 'prompt');
+  addLine(`kidcoder@monsterdex:~$ ${trimmed}`, 'prompt');
 
   const parts = trimmed.split(/\s+/);
   const command = parts[0].toLowerCase();
@@ -484,7 +444,7 @@ function handleCommand(rawInput) {
   }
 
   if (command === 'restart') {
-    addLine('[SYSTEM] Restarting infiltration...', 'muted');
+    addLine('[SYSTEM] Restarting quest...', 'muted');
     resetGame();
     return;
   }
@@ -495,79 +455,30 @@ function handleCommand(rawInput) {
   }
 
   if (solved) {
-    addLine('[INFO] Mission already complete. Type restart for a new run.', 'muted');
+    addLine('[INFO] You already won. Type restart for a new game.', 'muted');
     return;
   }
 
-  if (integrity <= 0 || timeLeft <= 0) {
-    addLine('[LOCKED] Session ended. Type restart.', 'danger');
+  if (stars <= 0 || timeLeft <= 0) {
+    addLine('[LOCKED] Game ended. Type restart.', 'danger');
     return;
   }
 
-  if (stage === 1 && command === 'decode') {
-    if (parts.length < 3) {
-      addLine('[ERROR] Usage: decode <token> <shift>', 'danger');
-      return;
-    }
-    const token = parts[1];
-    const shift = Number(parts[2]);
-    if (!Number.isInteger(shift)) {
-      addLine('[ERROR] Shift must be an integer.', 'danger');
-      return;
-    }
-    const decoded = caesarDecode(token, shift);
-    addLine(`[OUTPUT] ${decoded}`, 'muted');
-    if (decoded === 'KRAKEN') {
-      gameState.stage1Solved = true;
-      gameState.decodedWord = decoded;
-      completeStage();
-    } else {
-      penalize();
-    }
+  const answer = extractAnswer(trimmed);
+  const currentStage = stages[stage - 1];
+  if (currentStage.answers.includes(answer)) {
+    completeStage();
     return;
   }
 
-  if (stage === 2 && command === 'analyze') {
-    const binaryInput = trimmed.slice('analyze'.length).trim();
-    if (!binaryInput) {
-      addLine('[ERROR] Usage: analyze <8-bit binary groups>', 'danger');
-      return;
-    }
-    const text = binaryToText(binaryInput);
-    if (!text) {
-      addLine('[ERROR] Invalid binary format.', 'danger');
-      penalize();
-      return;
-    }
-    addLine(`[OUTPUT] ${text}`, 'muted');
-    if (text === 'GOLD') {
-      gameState.stage2Solved = true;
-      gameState.binaryWord = text;
-      completeStage();
-    } else {
-      penalize();
-    }
+  if (command === 'code' || command === 'answer' || /^[a-z0-9]+$/i.test(answer)) {
+    penalize();
+    updateHud();
+    updateStatus();
     return;
   }
 
-  if (stage === 3 && command === 'unlock') {
-    const phrase = trimmed.slice('unlock'.length).trim().toUpperCase();
-    const expected = `${gameState.decodedWord}-${gameState.binaryWord}`;
-    if (!phrase) {
-      addLine('[ERROR] Usage: unlock <keyphrase>', 'danger');
-      return;
-    }
-    if (phrase === expected) {
-      gameState.stage3Solved = true;
-      completeStage();
-    } else {
-      penalize();
-    }
-    return;
-  }
-
-  addLine('[ERROR] Command not valid for this stage. Use help.', 'danger');
-  penalize();
+  addLine('[ERROR] Unknown command. Try help.', 'danger');
 }
 
 formEl.addEventListener('submit', e => {
@@ -579,12 +490,12 @@ formEl.addEventListener('submit', e => {
 
 hintBtn.addEventListener('click', showHint);
 restartBtn.addEventListener('click', () => {
-  addLine('root@monsterdex:~$ restart', 'prompt');
-  addLine('[SYSTEM] Restarting infiltration...', 'muted');
+  addLine('kidcoder@monsterdex:~$ restart', 'prompt');
+  addLine('[SYSTEM] Restarting quest...', 'muted');
   resetGame();
 });
 clearBtn.addEventListener('click', () => {
-  addLine('root@monsterdex:~$ clear', 'prompt');
+  addLine('kidcoder@monsterdex:~$ clear', 'prompt');
   terminalEl.innerHTML = '';
   addLine('[LOG] Terminal cleared.', 'muted');
 });

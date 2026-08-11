@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MonsterDex Library</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦑</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Boogaloo&family=Rubik:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="modal-bg" id="camera-modal">
+  <div class="modal">
+    <div class="modal-title">📷 Identify a Monster</div>
+    <div class="upload-area" id="upload-area">
+      <input type="file" id="file-input" accept="image/*">
+      <span class="upload-icon">👁️</span>
+      <div class="upload-text"><strong>Tap to choose a photo</strong><br>or drag &amp; drop here</div>
+    </div>
+    <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
+    <img id="preview-img" alt="preview">
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-go" id="identify-btn" type="button" style="display:none">IDENTIFY!</button>
+      <button class="modal-btn modal-btn-cancel" id="camera-close" type="button">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">☠ Monster Field Guide ☠</div>
+    <div style="text-align:center"><span class="tape">The Ultimate Encyclopedia</span></div>
+    <div class="logo">MonsterDex</div>
+    <div class="scratch"></div>
+    <div class="tagline">"Know thy beast before it knows you."</div>
+  </header>
+
+  <form id="search-form" class="searchbar">
+    <input class="s-input" id="search-input" placeholder="Search any monster…" autocomplete="off" maxlength="200">
+    <button class="s-btn" type="submit">GO!</button>
+  </form>
+
+  <div id="suggestions" class="chips">
+    <span class="chip" data-monster="Kraken">🦑 Kraken</span>
+    <span class="chip" data-monster="Medusa">🐍 Medusa</span>
+    <span class="chip" data-monster="Werewolf">🐺 Werewolf</span>
+    <span class="chip" data-monster="Dragon">🐉 Dragon</span>
+    <span class="chip" data-monster="Mothman">🦇 Mothman</span>
+    <span class="chip" data-monster="Wendigo">💀 Wendigo</span>
+    <span class="chip" data-monster="Cerberus">🔥 Cerberus</span>
+  </div>
+
+  <div id="loading" class="loading hidden">
+    <div class="spin">💀</div>
+    <div id="loading-text">Consulting the ancient tomes…</div>
+    <div class="loading-bar"><div class="loading-fill"></div></div>
+  </div>
+
+  <div id="error-state" class="error-box hidden"></div>
+  <div id="result" class="hidden"></div>
+
+  <div id="homepage">
+    <div class="section-head">📋 Quick Actions</div>
+    <div class="action-btns">
+      <div class="act-btn" id="btn-camera" role="button" tabindex="0">
+        <span class="act-icon">📷</span>
+        <span class="act-label">Take Photo</span>
+        <span class="act-sub">Snap &amp; identify</span>
+      </div>
+      <div class="act-btn" id="btn-upload" role="button" tabindex="0">
+        <span class="act-icon">📁</span>
+        <span class="act-label">Upload Image</span>
+        <span class="act-sub">From your gallery</span>
+      </div>
+    </div>
+
+    <div id="past-searches" class="past-searches hidden">
+      <div class="section-head">📖 Recent Searches</div>
+      <div id="past-searches-list" class="cards"></div>
+      <button id="clear-history" class="clear-btn" type="button">Clear History</button>
+    </div>
+  </div>
+
+  <footer><a href="index.html" style="color: inherit;">Back to Home</a> · MonsterDex · Powered by AI</footer>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
