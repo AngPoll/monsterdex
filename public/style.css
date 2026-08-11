@@ -176,6 +176,32 @@ body {
 .act-label { font-family: 'Bangers', cursive; font-size: 18px; letter-spacing: 1px; color: #1a0a00; }
 .act-sub { font-size: 12px; color: #5a2d0c; letter-spacing: 1px; text-transform: uppercase; }
 
+/* ===== HACKER MODE LINK ===== */
+.hack-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  background: #fff;
+  border: 2px solid #1a0a00;
+  border-radius: 6px;
+  padding: 16px 12px;
+  margin-bottom: 26px;
+  box-shadow: 3px 3px 0 #1a0a00;
+  transition: all 0.15s;
+}
+
+.hack-link:hover {
+  background: #f5e8d0;
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 #1a0a00;
+}
+
+.hack-icon { font-size: 28px; line-height: 1; }
+.hack-label { font-family: 'Bangers', cursive; font-size: 22px; letter-spacing: 1px; color: #1a0a00; }
+.hack-sub { font-size: 12px; color: #5a2d0c; letter-spacing: 1px; text-transform: uppercase; }
+
 /* ===== MONSTER CARDS (past searches grid) ===== */
 .cards {
   display: grid;
